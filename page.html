@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racing AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <div class="bodyWrapper">
+        <div id="whatButton">?</div>
+        <div class="mainWrapper">
+            <div id="canvasContainer" class="outline">
+                <div class="whatText">Racing<br>Stadium</div>
+                <canvas id="hintCanvas"></canvas>
+                <canvas id="carCanvas"></canvas>
+                <canvas id="trackCanvas"></canvas>
+            </div>
+            <div class="toolbar">
+                <button id="startButton">Start</button>
+                <span id="tickCounter"></span>
+            </div>
+        </div>
+        <div class="sideWrapper">
+            <div class="garageWrapper outline">
+                <div class="whatText">Garage</div>
+                <canvas id="garageCanvas"></canvas>
+                <div class="probeAngleContainer">
+                    <label for="probeAngles">Probe°</label>
+                    <textarea name="probeAngles" id="probeAngles" placeholder="0&#10;30&#10;-30&#10;..."></textarea>
+                </div>
+            </div>
+            <div class="neuralNetworkWrapper outline">
+                <div class="whatText">Neural<br>Network</div>
+                <canvas id="neuralNetworkCanvas"></canvas>
+                <div id="layerContainer">
+                    <div id="inputLayer">1</div>
+                    <textarea name="hiddenLayers" id="hiddenLayers" placeholder="10 4 ..." rows="1"></textarea>
+                    <div id="outputLayer">1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
