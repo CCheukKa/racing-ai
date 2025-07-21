@@ -89,23 +89,57 @@ document.addEventListener('mousedown', (event: MouseEvent) => {
 
     switch (event.button) {
         case 0: // Left button
-            isLeftMouseDown = true;
+            handleLeftClick(x, y);
             break;
         case 1: // Middle button
             spawnCar(x, y);
             break;
         case 2: // Right button
-            isRightMouseDown = true;
+            handleRightClick(x, y);
             break;
         default:
             return;
     }
+});
+document.addEventListener('touchstart', (event: TouchEvent) => {
+    const rect = trackCanvas.getBoundingClientRect();
+    const x = event.touches[0].clientX - rect.left;
+    const y = event.touches[0].clientY - rect.top;
+
+    handleLeftClick(x, y);
 });
 document.addEventListener('mousemove', (event: MouseEvent) => {
     const rect = trackCanvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
+    handleMouseMove(x, y);
+});
+document.addEventListener('touchmove', (event: TouchEvent) => {
+    const rect = trackCanvas.getBoundingClientRect();
+    const x = event.touches[0].clientX - rect.left;
+    const y = event.touches[0].clientY - rect.top;
+
+    handleMouseMove(x, y);
+});
+document.addEventListener('mouseup', () => {
+    handleMouseUp();
+});
+document.addEventListener('touchend', () => {
+    handleMouseUp();
+    redrawHint(NaN, NaN);
+});
+function handleLeftClick(x: number, y: number) {
+    isLeftMouseDown = true;
+    isRightMouseDown = false;
+    handleMouseMove(x, y);
+}
+function handleRightClick(x: number, y: number) {
+    isLeftMouseDown = false;
+    isRightMouseDown = true;
+    handleMouseMove(x, y);
+}
+function handleMouseMove(x: number, y: number) {
     redrawHint(x, y);
 
     if (isLeftMouseDown) {
@@ -130,13 +164,13 @@ document.addEventListener('mousemove', (event: MouseEvent) => {
 
         trackData = trackCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).data;
     }
-});
-document.addEventListener('mouseup', () => {
+}
+function handleMouseUp() {
     isLeftMouseDown = false;
     isRightMouseDown = false;
     previousX = undefined;
     previousY = undefined;
-});
+}
 
 document.addEventListener('DOMContentLoaded', () => { redrawHint(NaN, NaN); });
 function redrawHint(x: number, y: number) {
