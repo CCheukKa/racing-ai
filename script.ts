@@ -8,10 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// main
+//! main
 const startButton = document.getElementById('startButton') as HTMLButtonElement;
 startButton.addEventListener('click', () => {
-    const successful = startGenetics();
+    const successful = startNaturalSelection();
     lockInputs(successful);
 });
 
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hintCanvas.height = STADIUM_HEIGHT;
 });
 
-// garage
+//! garage
 const garageCanvas = document.getElementById('garageCanvas') as HTMLCanvasElement;
 const garageCtx = garageCanvas.getContext('2d') as CanvasRenderingContext2D;
 garageCanvas.width = 300;
@@ -45,7 +45,7 @@ garageCanvas.height = 300;
 
 const probeAnglesInput = document.getElementById('probeAngles') as HTMLTextAreaElement;
 
-// neural network
+//! neural network
 const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas') as HTMLCanvasElement;
 const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d') as CanvasRenderingContext2D;
 neuralNetworkCanvas.width = 350;
@@ -56,7 +56,7 @@ const inputLayerElement = document.getElementById('inputLayer') as HTMLDivElemen
 const outputLayerElement = document.getElementById('outputLayer') as HTMLDivElement;
 const hiddenLayerInput = document.getElementById('hiddenLayers') as HTMLTextAreaElement;
 
-// lock inputs
+//! lock inputs
 const lockableElements: (HTMLButtonElement | HTMLTextAreaElement | HTMLInputElement)[] = [startButton, probeAnglesInput, hiddenLayerInput];
 function lockInputs(lock: boolean) {
     if (areInputsLocked === lock) { return };
@@ -509,7 +509,6 @@ function redrawGarage() {
 
 //#endregion
 
-
 //#region Neural Network
 /* ----------------------------- Neural Network ----------------------------- */
 
@@ -761,12 +760,12 @@ hiddenLayerInput.addEventListener('input', () => {
 });
 //#endregion
 
-//#region Genetic Algorithm
-/* ---------------------------- Genetic Algorithm --------------------------- */
+//#region Natural Selection
+/* ---------------------------- Natural Selection --------------------------- */
 let cars: Car[] = [];
 
 const TARGET_POPULATION_SIZE = 50;
-function startGenetics() {
+function startNaturalSelection() {
     if (probeAngles === null) { return false; }
     cars = Array.from({ length: TARGET_POPULATION_SIZE }, () => new Car(undefined, undefined, probeAngles));
 

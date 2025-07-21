@@ -7,10 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
         element.style.height = element.parentElement?.clientHeight + 'px';
     });
 });
-// main
+//! main
 const startButton = document.getElementById('startButton');
 startButton.addEventListener('click', () => {
-    const successful = startGenetics();
+    const successful = startNaturalSelection();
     lockInputs(successful);
 });
 const tickCounter = document.getElementById('tickCounter');
@@ -33,13 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
     hintCanvas.width = STADIUM_WIDTH;
     hintCanvas.height = STADIUM_HEIGHT;
 });
-// garage
+//! garage
 const garageCanvas = document.getElementById('garageCanvas');
 const garageCtx = garageCanvas.getContext('2d');
 garageCanvas.width = 300;
 garageCanvas.height = 300;
 const probeAnglesInput = document.getElementById('probeAngles');
-// neural network
+//! neural network
 const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas');
 const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d');
 neuralNetworkCanvas.width = 350;
@@ -48,7 +48,7 @@ const layerContainer = document.getElementById('layerContainer');
 const inputLayerElement = document.getElementById('inputLayer');
 const outputLayerElement = document.getElementById('outputLayer');
 const hiddenLayerInput = document.getElementById('hiddenLayers');
-// lock inputs
+//! lock inputs
 const lockableElements = [startButton, probeAnglesInput, hiddenLayerInput];
 function lockInputs(lock) {
     if (areInputsLocked === lock) {
@@ -665,11 +665,11 @@ hiddenLayerInput.addEventListener('input', () => {
     redrawNeuralNetwork();
 });
 //#endregion
-//#region Genetic Algorithm
-/* ---------------------------- Genetic Algorithm --------------------------- */
+//#region Natural Selection
+/* ---------------------------- Natural Selection --------------------------- */
 let cars = [];
 const TARGET_POPULATION_SIZE = 50;
-function startGenetics() {
+function startNaturalSelection() {
     if (probeAngles === null) {
         return false;
     }
