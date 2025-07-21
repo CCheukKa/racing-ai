@@ -91,13 +91,13 @@ document.addEventListener('mousedown', (event: MouseEvent) => {
 
     switch (event.button) {
         case 0: // Left button
-            handleLeftClick(x, y);
+            handleLeftClick(x, y, event.target);
             break;
         case 1: // Middle button
             spawnCar(x, y);
             break;
         case 2: // Right button
-            handleRightClick(x, y);
+            handleRightClick(x, y, event.target);
             break;
         default:
             return;
@@ -108,7 +108,7 @@ document.addEventListener('touchstart', (event: TouchEvent) => {
     const x = event.touches[0].clientX - rect.left;
     const y = event.touches[0].clientY - rect.top;
 
-    handleLeftClick(x, y);
+    handleLeftClick(x, y, event.touches[0].target);
 });
 document.addEventListener('mousemove', (event: MouseEvent) => {
     const rect = trackCanvas.getBoundingClientRect();
@@ -131,12 +131,16 @@ document.addEventListener('touchend', () => {
     handleMouseUp();
     redrawHint(NaN, NaN);
 });
-function handleLeftClick(x: number, y: number) {
+function handleLeftClick(x: number, y: number, target: EventTarget | null) {
+    if (shouldDiscardEvent(target)) { return; }
+
     isLeftMouseDown = true;
     isRightMouseDown = false;
     handleMouseMove(x, y);
 }
-function handleRightClick(x: number, y: number) {
+function handleRightClick(x: number, y: number, target: EventTarget | null) {
+    if (shouldDiscardEvent(target)) { return; }
+
     isLeftMouseDown = false;
     isRightMouseDown = true;
     handleMouseMove(x, y);
@@ -172,6 +176,13 @@ function handleMouseUp() {
     isRightMouseDown = false;
     previousX = undefined;
     previousY = undefined;
+}
+function shouldDiscardEvent(target: EventTarget | null): boolean {
+    return target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLButtonElement
+        || target instanceof HTMLSelectElement;
+
 }
 
 document.addEventListener('DOMContentLoaded', () => { redrawHint(NaN, NaN); });
