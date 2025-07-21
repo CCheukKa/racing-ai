@@ -49,7 +49,7 @@ const probeAnglesInput = document.getElementById('probeAngles') as HTMLTextAreaE
 const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas') as HTMLCanvasElement;
 const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d') as CanvasRenderingContext2D;
 neuralNetworkCanvas.width = 375;
-neuralNetworkCanvas.height = 250;
+neuralNetworkCanvas.height = 220;
 
 const layerContainer = document.getElementById('layerContainer') as HTMLDivElement;
 const inputLayerElement = document.getElementById('inputLayer') as HTMLDivElement;
@@ -502,9 +502,6 @@ function redrawGarage() {
     drawRectangle(garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, '#000000', true);
 
     garageCtx.restore();
-
-    drawText(garageCtx, 'Front', garageCanvas.width / 2, 10, '#ffffff', { textAlign: 'center', textBaseline: 'top' });
-    drawText(garageCtx, 'Back', garageCanvas.width / 2, garageCanvas.height - 10, '#ffffff', { textAlign: 'center', textBaseline: 'alphabetic' });
 }
 
 //#endregion
@@ -598,11 +595,6 @@ class Network {
 
 //#region Neural Network UI
 /* ----------------------------- Neural Network UI --------------------------- */
-const HORIZONTAL_PADDING = 25;
-const TOP_PADDING = 10;
-const BOTTOM_PADDING = 25;
-const TEXT_PADDING = 10;
-
 document.addEventListener('DOMContentLoaded', redrawNeuralNetwork);
 function redrawNeuralNetwork() {
     neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
@@ -612,18 +604,18 @@ function redrawNeuralNetwork() {
     const layerCount = layerSizes.length;
     const maxLayerSize = Math.max(...layerSizes);
     const nodeRadius = Math.min(
-        (neuralNetworkCanvas.height - TOP_PADDING - BOTTOM_PADDING) / maxLayerSize / 2 - 2,
-        (neuralNetworkCanvas.width - HORIZONTAL_PADDING * 2) / layerCount / 2 - 3
+        neuralNetworkCanvas.height / maxLayerSize / 2 - 2,
+        neuralNetworkCanvas.width / layerCount / 2 - 3
     );
-    const nodeHeight = (neuralNetworkCanvas.height - TOP_PADDING - BOTTOM_PADDING) / maxLayerSize;
-    const layerWidth = (neuralNetworkCanvas.width - HORIZONTAL_PADDING * 2 - nodeRadius * 2) / (layerCount - 1);
+    const nodeHeight = neuralNetworkCanvas.height / maxLayerSize;
+    const layerWidth = (neuralNetworkCanvas.width - nodeRadius * 2) / (layerCount - 1);
     const nodePositions: { x: number, y: number }[][] = [];
     for (let i = 0; i < layerCount; i++) {
         const layerSize = layerSizes[i];
-        const layerX = HORIZONTAL_PADDING + nodeRadius + i * layerWidth;
+        const layerX = nodeRadius + i * layerWidth;
         nodePositions[i] = [];
         const totalNodesHeight = layerSize * nodeHeight;
-        const verticalOffset = (neuralNetworkCanvas.height - TOP_PADDING - BOTTOM_PADDING - totalNodesHeight) / 2 + TOP_PADDING;
+        const verticalOffset = (neuralNetworkCanvas.height - totalNodesHeight) / 2;
         for (let j = 0; j < layerSize; j++) {
             const nodeY = verticalOffset + j * nodeHeight + nodeHeight / 2;
             nodePositions[i].push({ x: layerX, y: nodeY });
@@ -669,16 +661,11 @@ function redrawNeuralNetwork() {
     drawText(neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
     drawText(neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
 
-    // draw layer labels
-    drawText(neuralNetworkCtx, 'Input', nodePositions[0][0].x, neuralNetworkCanvas.height - TEXT_PADDING, '#ffffff', { textAlign: 'center', textBaseline: 'alphabetic', fontSize: 16 });
-    drawText(neuralNetworkCtx, 'Hidden', neuralNetworkCanvas.width / 2, neuralNetworkCanvas.height - TEXT_PADDING, '#ffffff', { textAlign: 'center', textBaseline: 'alphabetic', fontSize: 16 });
-    drawText(neuralNetworkCtx, 'Output', nodePositions[layerCount - 1][0].x, neuralNetworkCanvas.height - TEXT_PADDING, '#ffffff', { textAlign: 'center', textBaseline: 'alphabetic', fontSize: 16 });
-
     // update layer container
     inputLayerElement.innerHTML = layerSizes[0].toString();
     outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
-    inputLayerElement.style.marginLeft = `${HORIZONTAL_PADDING + nodeRadius}px`;
-    outputLayerElement.style.marginRight = `${HORIZONTAL_PADDING + nodeRadius}px`;
+    inputLayerElement.parentElement!.style.marginLeft = `${nodeRadius}px`;
+    outputLayerElement.parentElement!.style.marginRight = `${nodeRadius}px`;
 }
 
 hiddenLayerInput.addEventListener('input', () => {
