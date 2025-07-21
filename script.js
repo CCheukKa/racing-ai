@@ -14,23 +14,25 @@ startButton.addEventListener('click', () => {
     lockInputs(successful);
 });
 const tickCounter = document.getElementById('tickCounter');
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 600;
-const canvasContainer = document.getElementById('canvasContainer');
+const stadiumContainer = document.getElementById('stadiumContainer');
+const CANVAS_WIDTH = stadiumContainer.clientWidth;
+const CANVAS_HEIGHT = stadiumContainer.clientHeight;
 const trackCanvas = document.getElementById('trackCanvas');
 const trackCtx = trackCanvas.getContext('2d', { willReadFrequently: true });
 const carCanvas = document.getElementById('carCanvas');
 const carCtx = carCanvas.getContext('2d');
 const hintCanvas = document.getElementById('hintCanvas');
 const hintCtx = hintCanvas.getContext('2d');
-canvasContainer.style.width = `${CANVAS_WIDTH}px`;
-canvasContainer.style.height = `${CANVAS_HEIGHT}px`;
-trackCanvas.width = CANVAS_WIDTH;
-trackCanvas.height = CANVAS_HEIGHT;
-carCanvas.width = CANVAS_WIDTH;
-carCanvas.height = CANVAS_HEIGHT;
-hintCanvas.width = CANVAS_WIDTH;
-hintCanvas.height = CANVAS_HEIGHT;
+document.addEventListener('DOMContentLoaded', () => {
+    stadiumContainer.style.width = `${CANVAS_WIDTH}px`;
+    stadiumContainer.style.height = `${CANVAS_HEIGHT}px`;
+    trackCanvas.width = CANVAS_WIDTH;
+    trackCanvas.height = CANVAS_HEIGHT;
+    carCanvas.width = CANVAS_WIDTH;
+    carCanvas.height = CANVAS_HEIGHT;
+    hintCanvas.width = CANVAS_WIDTH;
+    hintCanvas.height = CANVAS_HEIGHT;
+});
 // garage
 const garageCanvas = document.getElementById('garageCanvas');
 const garageCtx = garageCanvas.getContext('2d');
