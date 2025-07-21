@@ -278,10 +278,9 @@ class Car {
         this.originAngle = Math.atan2(this.y - STADIUM_HEIGHT / 2, this.x - STADIUM_WIDTH / 2);
     }
 
-    updateProbes(): number[] {
-        return this.probes.map(probe => {
+    updateProbes() {
+        this.probes.forEach(probe => {
             probe.distance = raycastDistance(this, probe.angle);
-            return probe.distance;
         });
     }
 
@@ -323,10 +322,12 @@ function tickGame() {
     tickCounter.textContent = `Tick: ${tickCount}`;
 
     processCars();
-    scoreCars();
+    cars.forEach(updateRoadScore);
     drawCars();
     if (++tickCount >= TICK_LIMIT) {
-        tallyScores();
+        cars.forEach((car) => {
+            car.score += getPerformanceScore(car, tickCount);
+        });
         endGeneration();
         tickCount = 0;
     } else {
@@ -339,8 +340,8 @@ function processCars() {
         car.engineInput = +throttleButtonPressed - +brakeButtonPressed;
         car.steerInput = +rightButtonPressed - +leftButtonPressed;
 
-        const probeDistances = car.updateProbes();
-        [car.engineInput, car.steerInput] = car.network.predict(getInputLayerValues(car, probeDistances));
+        car.updateProbes();
+        [car.engineInput, car.steerInput] = car.network.predict(getInputLayerValues(car));
         car.move();
     });
 }
@@ -415,36 +416,34 @@ function isOnTrack(point: { x: number, y: number }): boolean {
     return trackData[index + 3] !== 0; // Check alpha channel
 }
 
-function scoreCars() {
-    cars.forEach(car => {
-        car.score += car.isOnTrack ? 0.2 : -5;
-        if (car.isOnTrack) {
-            car.score += interpolate(car.speed, [-1, 0, 1, 5], [-3, -2, 1, 4]);
+function updateRoadScore(car: Car) {
+    car.score += car.isOnTrack ? 0.2 : -5;
+    if (car.isOnTrack) {
+        car.score += interpolate(car.speed, [-1, 0, 1, 5], [-3, -2, 1, 4]);
+    }
+
+    if (car.previousOriginAngle) {
+        let deltaAngle = car.originAngle - car.previousOriginAngle;
+        if (deltaAngle < -Math.PI) {
+            deltaAngle += 2 * Math.PI;
+        } else if (deltaAngle > Math.PI) {
+            deltaAngle -= 2 * Math.PI;
         }
+        car.lapCount += deltaAngle / (2 * Math.PI);
+    }
+    car.previousOriginAngle = car.originAngle;
 
-        if (car.previousOriginAngle) {
-            let deltaAngle = car.originAngle - car.previousOriginAngle;
-            if (deltaAngle < -Math.PI) {
-                deltaAngle += 2 * Math.PI;
-            } else if (deltaAngle > Math.PI) {
-                deltaAngle -= 2 * Math.PI;
-            }
-            car.lapCount += deltaAngle / (2 * Math.PI);
-        }
-        car.previousOriginAngle = car.originAngle;
+    car.grassTicks -= +car.isOnTrack;
+    car.speedSum += car.speed;
 
-        car.grassTicks -= +car.isOnTrack;
-        car.speedSum += car.speed;
-
-        // console.log(`Car at (${car.x.toFixed(2)}, ${car.y.toFixed(2)}) - Speed: ${car.speed.toFixed(2)}, Score: ${car.score.toFixed(2)}, Lap Count: ${car.lapCount.toFixed(2)}`);
-    });
+    // console.log(`Car at (${car.x.toFixed(2)}, ${car.y.toFixed(2)}) - Speed: ${car.speed.toFixed(2)}, Score: ${car.score.toFixed(2)}, Lap Count: ${car.lapCount.toFixed(2)}`);
 }
 
-function tallyScores() {
-    cars.forEach(car => {
-        car.score += car.lapCount * ((TICK_LIMIT - car.grassTicks) / TICK_LIMIT) ** 2 * 100;
-        car.score += interpolate(car.speedSum / TICK_LIMIT, [0, 1], [-100, 100]);
-    });
+function getPerformanceScore(car: Car, atTick: number) {
+    let score = 0;
+    score += car.lapCount * ((atTick - car.grassTicks) / atTick) ** 2 * 100;
+    score += interpolate(car.speedSum / atTick, [0, 1], [-100, 100]);
+    return score;
 }
 //#endregion
 
@@ -609,7 +608,8 @@ type NeuralNetworkInputOptions = {
     trackAngle: NeuralNetworkInputOption,
     lapCount: NeuralNetworkInputOption,
     onTrack: NeuralNetworkInputOption,
-    carScore: NeuralNetworkInputOption,
+    roadScore: NeuralNetworkInputOption,
+    performanceScore: NeuralNetworkInputOption,
     tickNumber: NeuralNetworkInputOption,
 };
 const neuralNetworkInputOptions: NeuralNetworkInputOptions = {
@@ -620,7 +620,8 @@ const neuralNetworkInputOptions: NeuralNetworkInputOptions = {
     trackAngle: { element: document.getElementById('trackAngle') as HTMLInputElement },
     lapCount: { element: document.getElementById('lapCount') as HTMLInputElement },
     onTrack: { element: document.getElementById('onTrack') as HTMLInputElement },
-    carScore: { element: document.getElementById('carScore') as HTMLInputElement },
+    roadScore: { element: document.getElementById('roadScore') as HTMLInputElement },
+    performanceScore: { element: document.getElementById('performanceScore') as HTMLInputElement },
     tickNumber: { element: document.getElementById('tickNumber') as HTMLInputElement },
 } as const;
 document.addEventListener('DOMContentLoaded', () => {
@@ -650,24 +651,25 @@ function getInputLayerSize(): number {
     if (neuralNetworkInputOptions.trackAngle.value) { size++; }
     if (neuralNetworkInputOptions.lapCount.value) { size++; }
     if (neuralNetworkInputOptions.onTrack.value) { size++; }
-    if (neuralNetworkInputOptions.carScore.value) { size++; }
+    if (neuralNetworkInputOptions.roadScore.value) { size++; }
+    if (neuralNetworkInputOptions.performanceScore.value) { size++; }
     if (neuralNetworkInputOptions.tickNumber.value) { size++; }
     return size;
 }
-
-function getInputLayerValues(car: Car, probeDistances: number[]): number[] {
+function getInputLayerValues(car: Car): number[] {
     const options = neuralNetworkInputOptions;
     let inputLayerValues: number[] = [
-        ...options.probeDistances.value ? probeDistances : [],
-        options.carSpeed.value ? car.speed : 0,
-        options.carAngle.value ? car.angle : 0,
+        ...options.probeDistances.value ? car.probes.map(probe => probe.distance) : [],
+        options.carSpeed.value ? car.speed : NaN,
+        options.carAngle.value ? car.angle : NaN,
         ...options.carPosition.value ? [car.x - STADIUM_WIDTH / 2, car.y - STADIUM_HEIGHT / 2] : [],
-        options.trackAngle.value ? car.originAngle : 0,
-        options.lapCount.value ? car.lapCount : 0,
-        options.onTrack.value ? (car.isOnTrack ? 1 : 0) : 0,
-        options.carScore.value ? car.score : 0,
-        options.tickNumber.value ? tickCount : 0
-    ];
+        options.trackAngle.value ? car.originAngle : NaN,
+        options.lapCount.value ? car.lapCount : NaN,
+        options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
+        options.roadScore.value ? car.score : NaN,
+        options.performanceScore.value ? getPerformanceScore(car, tickCount) : NaN,
+        options.tickNumber.value ? tickCount : NaN
+    ].filter(value => !isNaN(value));
     return inputLayerValues
 }
 
