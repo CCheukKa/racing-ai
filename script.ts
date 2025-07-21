@@ -805,9 +805,8 @@ function endGeneration() {
 
     console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
 
-    cars = [...survivedCars];
-
-    while (cars.length < naturalSelectionInputOptions.populationSize.value) {
+    const newCars: Car[] = [];
+    while (survivedCars.length + newCars.length < naturalSelectionInputOptions.populationSize.value) {
         for (const car of survivedCars) {
             if (Math.random() > reproductionProbability(car.rank)) { continue; }
             console.log(`===== Reproducing: rank ${car.rank}, score ${car.score}, hash ${car.network.getHash()} =====`);
@@ -815,11 +814,27 @@ function endGeneration() {
             const newCar = car.clone();
             newCar.network.mutate();
             newCar.colour = randomNudgeColour(car.colour, 10);
-            cars.push(newCar);
+            newCars.push(newCar);
         }
     }
 
+    if (naturalSelectionInputOptions.parentShouldMutate.value) {
+        survivedCars.forEach(car => car.network.mutate());
+    }
+
+    cars = [...survivedCars, ...newCars];
+
     requestAnimationFrame(startGeneration);
+
+    naturalSelectionLog[naturalSelectionLog.length - 1] = {
+        generation: generationCount,
+        populationSize: naturalSelectionInputOptions.populationSize.value,
+        survivors: survivedCars.length,
+        bestScore: sortedCars[0].score
+    };
+    updateNaturalSelectionLog();
+
+    console.log(`---------- End of Generation ${generationCount} ----------`);
 }
 
 function survivalProbability(rank: number): number {
@@ -833,16 +848,13 @@ function reproductionProbability(rank: number): number {
 
 //#region Natural Selection UI
 /* -------------------------- Natural Selection UI -------------------------- */
-type NaturalSelectionInputOption = {
-    element: HTMLInputElement;
-    value: number;
-}
 type NaturalSelectionInputOptions = {
-    tickLimit: NaturalSelectionInputOption,
-    populationSize: NaturalSelectionInputOption,
-    survivalHarshness: NaturalSelectionInputOption,
-    reproductionHarshness: NaturalSelectionInputOption,
-    mutationRate: NaturalSelectionInputOption,
+    tickLimit: { element: HTMLInputElement, value: number },
+    populationSize: { element: HTMLInputElement, value: number },
+    survivalHarshness: { element: HTMLInputElement, value: number },
+    reproductionHarshness: { element: HTMLInputElement, value: number },
+    mutationRate: { element: HTMLInputElement, value: number },
+    parentShouldMutate: { element: HTMLInputElement, value: boolean },
 };
 const naturalSelectionInputOptions: NaturalSelectionInputOptions = {
     tickLimit: { element: document.getElementById('tickLimit') as HTMLInputElement, value: NaN },
@@ -850,20 +862,24 @@ const naturalSelectionInputOptions: NaturalSelectionInputOptions = {
     survivalHarshness: { element: document.getElementById('survivalHarshness') as HTMLInputElement, value: NaN },
     reproductionHarshness: { element: document.getElementById('reproductionHarshness') as HTMLInputElement, value: NaN },
     mutationRate: { element: document.getElementById('mutationRate') as HTMLInputElement, value: NaN },
+    parentShouldMutate: { element: document.getElementById('parentShouldMutate') as HTMLInputElement, value: false },
 } as const;
 document.addEventListener('DOMContentLoaded', () => {
     Object.keys(naturalSelectionInputOptions).forEach((key) => {
         const typedKey = key as keyof typeof naturalSelectionInputOptions;
         const inputOption = naturalSelectionInputOptions[typedKey];
         if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
-        lockableElements.push(inputOption.element);
 
         inputOption.element.addEventListener('change', onInputChange);
         onInputChange();
 
         function onInputChange() {
-            const newValue = inputOption.element.valueAsNumber;
-            if (!isNaN(newValue)) { inputOption.value = newValue; }
+            if (typeof inputOption.value === "number") {
+                const newValue = inputOption.element.valueAsNumber;
+                if (!isNaN(newValue)) { inputOption.value = newValue; }
+            } else if (typeof inputOption.value === "boolean") {
+                inputOption.value = inputOption.element.checked;
+            }
         }
     });
 });

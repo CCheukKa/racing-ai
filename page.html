@@ -125,8 +125,7 @@
                     <input required type="number" id="tickLimit" placeholder="2000" value="2000" min="1">
                 </div>
                 <div class="option">
-                    <label for="populationSize"
-                        title="Number of cars in each generation; Varies depending on reproduction probabilities">
+                    <label for="populationSize" title="Number of cars in each generation">
                         Target Population Size
                     </label>
                     <input required type="number" id="populationSize" placeholder="50" value="50" min="1">
@@ -153,6 +152,13 @@
                     </label>
                     <input required type="number" id="mutationRate" placeholder="0.5" value="0.5" min="0"
                         step="0.00001">
+                </div>
+                <div class="option">
+                    <label for="parentShouldMutate"
+                        title="Whether parents should mutate between generations; Can lead to loss of good genes">
+                        Parent should Mutate?
+                    </label>
+                    <input type="checkbox" id="parentShouldMutate">
                 </div>
             </div>
             <button id="startButton">Start</button>

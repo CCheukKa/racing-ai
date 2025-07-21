@@ -328,6 +328,10 @@ body {
                     &:user-invalid {
                         background-color: #ff0000a0;
                     }
+
+                    &[type=checkbox] {
+                        width: initial;
+                    }
                 }
             }
 

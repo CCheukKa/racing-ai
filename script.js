@@ -709,8 +709,8 @@ function endGeneration() {
     });
     console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / naturalSelectionInputOptions.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
     console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
-    cars = [...survivedCars];
-    while (cars.length < naturalSelectionInputOptions.populationSize.value) {
+    const newCars = [];
+    while (survivedCars.length + newCars.length < naturalSelectionInputOptions.populationSize.value) {
         for (const car of survivedCars) {
             if (Math.random() > reproductionProbability(car.rank)) {
                 continue;
@@ -719,9 +719,13 @@ function endGeneration() {
             const newCar = car.clone();
             newCar.network.mutate();
             newCar.colour = randomNudgeColour(car.colour, 10);
-            cars.push(newCar);
+            newCars.push(newCar);
         }
     }
+    if (naturalSelectionInputOptions.parentShouldMutate.value) {
+        survivedCars.forEach(car => car.network.mutate());
+    }
+    cars = [...survivedCars, ...newCars];
     requestAnimationFrame(startGeneration);
 }
 function survivalProbability(rank) {
@@ -736,6 +740,7 @@ const naturalSelectionInputOptions = {
     survivalHarshness: { element: document.getElementById('survivalHarshness'), value: NaN },
     reproductionHarshness: { element: document.getElementById('reproductionHarshness'), value: NaN },
     mutationRate: { element: document.getElementById('mutationRate'), value: NaN },
+    parentShouldMutate: { element: document.getElementById('parentShouldMutate'), value: false },
 };
 document.addEventListener('DOMContentLoaded', () => {
     Object.keys(naturalSelectionInputOptions).forEach((key) => {
@@ -744,13 +749,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inputOption.element) {
             throw new Error(`Input element for ${typedKey} not found`);
         }
-        lockableElements.push(inputOption.element);
         inputOption.element.addEventListener('change', onInputChange);
         onInputChange();
         function onInputChange() {
-            const newValue = inputOption.element.valueAsNumber;
-            if (!isNaN(newValue)) {
-                inputOption.value = newValue;
+            if (typeof inputOption.value === "number") {
+                const newValue = inputOption.element.valueAsNumber;
+                if (!isNaN(newValue)) {
+                    inputOption.value = newValue;
+                }
+            }
+            else if (typeof inputOption.value === "boolean") {
+                inputOption.value = inputOption.element.checked;
             }
         }
     });
