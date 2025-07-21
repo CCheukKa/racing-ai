@@ -18,8 +18,8 @@ startButton.addEventListener('click', () => {
 const tickCounter = document.getElementById('tickCounter') as HTMLSpanElement;
 
 const stadiumContainer = document.getElementById('stadiumContainer') as HTMLDivElement;
-const CANVAS_WIDTH = stadiumContainer.clientWidth;
-const CANVAS_HEIGHT = stadiumContainer.clientHeight;
+const STADIUM_WIDTH = stadiumContainer.clientWidth;
+const STADIUM_HEIGHT = stadiumContainer.clientHeight;
 const trackCanvas = document.getElementById('trackCanvas') as HTMLCanvasElement;
 const trackCtx = trackCanvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
 const carCanvas = document.getElementById('carCanvas') as HTMLCanvasElement;
@@ -27,14 +27,14 @@ const carCtx = carCanvas.getContext('2d') as CanvasRenderingContext2D;
 const hintCanvas = document.getElementById('hintCanvas') as HTMLCanvasElement;
 const hintCtx = hintCanvas.getContext('2d') as CanvasRenderingContext2D;
 document.addEventListener('DOMContentLoaded', () => {
-    stadiumContainer.style.width = `${CANVAS_WIDTH}px`;
-    stadiumContainer.style.height = `${CANVAS_HEIGHT}px`;
-    trackCanvas.width = CANVAS_WIDTH;
-    trackCanvas.height = CANVAS_HEIGHT;
-    carCanvas.width = CANVAS_WIDTH;
-    carCanvas.height = CANVAS_HEIGHT;
-    hintCanvas.width = CANVAS_WIDTH;
-    hintCanvas.height = CANVAS_HEIGHT;
+    stadiumContainer.style.width = `${STADIUM_WIDTH}px`;
+    stadiumContainer.style.height = `${STADIUM_HEIGHT}px`;
+    trackCanvas.width = STADIUM_WIDTH;
+    trackCanvas.height = STADIUM_HEIGHT;
+    carCanvas.width = STADIUM_WIDTH;
+    carCanvas.height = STADIUM_HEIGHT;
+    hintCanvas.width = STADIUM_WIDTH;
+    hintCanvas.height = STADIUM_HEIGHT;
 });
 
 // garage
@@ -71,8 +71,8 @@ function lockInputs(lock: boolean) {
 const TRACK_COLOUR = '#e0e0e0';
 const TRACK_WIDTH = 50;
 
-const TRACK_START_X = CANVAS_WIDTH / 2;
-const TRACK_START_Y = CANVAS_HEIGHT / 4;
+const TRACK_START_X = STADIUM_WIDTH / 2;
+const TRACK_START_Y = STADIUM_HEIGHT / 4;
 
 let isLeftMouseDown = false;
 let isRightMouseDown = false;
@@ -152,7 +152,7 @@ function handleMouseMove(x: number, y: number) {
         previousX = x;
         previousY = y;
 
-        trackData = trackCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).data;
+        trackData = trackCtx.getImageData(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT).data;
     }
     if (isRightMouseDown) {
         trackCtx.globalCompositeOperation = 'destination-out';
@@ -164,7 +164,7 @@ function handleMouseMove(x: number, y: number) {
         previousX = x;
         previousY = y;
 
-        trackData = trackCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).data;
+        trackData = trackCtx.getImageData(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT).data;
     }
 }
 function handleMouseUp() {
@@ -176,10 +176,10 @@ function handleMouseUp() {
 
 document.addEventListener('DOMContentLoaded', () => { redrawHint(NaN, NaN); });
 function redrawHint(x: number, y: number) {
-    hintCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    hintCtx.clearRect(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT);
     drawCircle(hintCtx, TRACK_START_X, TRACK_START_Y, 5, '#ff0000'); // Track start
     drawCircle(hintCtx, TRACK_START_X, TRACK_START_Y, 5, '#000000', true); // Track start
-    drawCircle(hintCtx, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 5, '#000000', true); // Track center
+    drawCircle(hintCtx, STADIUM_WIDTH / 2, STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
     drawCircle(hintCtx, x, y, TRACK_WIDTH / 2, '#ffffff', true); // Cursor
 }
 //#endregion
@@ -275,7 +275,7 @@ class Car {
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed;
 
-        this.originAngle = Math.atan2(this.y - CANVAS_HEIGHT / 2, this.x - CANVAS_WIDTH / 2);
+        this.originAngle = Math.atan2(this.y - STADIUM_HEIGHT / 2, this.x - STADIUM_WIDTH / 2);
     }
 
     updateProbes(): number[] {
@@ -346,7 +346,7 @@ function processCars() {
 }
 
 function spawnCar(x: number, y: number) {
-    if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
+    if (x < 0 || x >= STADIUM_WIDTH || y < 0 || y >= STADIUM_HEIGHT) {
         console.warn('Spawn coordinates out of bounds');
         return;
     }
@@ -357,7 +357,7 @@ function spawnCar(x: number, y: number) {
 }
 
 function drawCars() {
-    carCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    carCtx.clearRect(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT);
     carCtx.save();
 
     cars.forEach(car => {
@@ -405,13 +405,13 @@ function raycastDistance(car: Car, angle: number): number {
 }
 
 function isOnTrack(point: { x: number, y: number }): boolean {
-    if (point.x < 0 || point.x >= CANVAS_WIDTH || point.y < 0 || point.y >= CANVAS_HEIGHT) {
+    if (point.x < 0 || point.x >= STADIUM_WIDTH || point.y < 0 || point.y >= STADIUM_HEIGHT) {
         return false; // Out of bounds
     }
 
     const x = Math.floor(point.x);
     const y = Math.floor(point.y);
-    const index = (y * CANVAS_WIDTH + x) * 4;
+    const index = (y * STADIUM_WIDTH + x) * 4;
     return trackData[index + 3] !== 0; // Check alpha channel
 }
 
@@ -662,7 +662,7 @@ function getInputLayerValues(car: Car, probeDistances: number[]): number[] {
         ...options.probeDistances.value ? probeDistances : [],
         options.carSpeed.value ? car.speed : 0,
         options.carAngle.value ? car.angle : 0,
-        ...options.carPosition.value ? [car.x - CANVAS_WIDTH / 2, car.y - CANVAS_HEIGHT / 2] : [],
+        ...options.carPosition.value ? [car.x - STADIUM_WIDTH / 2, car.y - STADIUM_HEIGHT / 2] : [],
         options.trackAngle.value ? car.originAngle : 0,
         options.lapCount.value ? car.lapCount : 0,
         options.onTrack.value ? (car.isOnTrack ? 1 : 0) : 0,
