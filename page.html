@@ -29,11 +29,68 @@
             </div>
             <div class="probeAngleContainer">
                 <label for="probeAngles">Probe°</label>
-                <textarea name="probeAngles" id="probeAngles" placeholder="0&#10;30&#10;-30&#10;..."></textarea>
+                <textarea name="probeAngles" id="probeAngles" placeholder="0&#10;30&#10;-30&#10;...">0</textarea>
             </div>
         </div>
         <div class="neuralNetworkContainer outline">
             <div class="whatText">Neural<br>Network</div>
+            <div class="inputControlContainer">
+                <div class="title">Input Layer</div>
+                <div class="booleanOption">
+                    <label for="probeDistances" title="Distance to grass from each probe">
+                        Probe Dist.
+                    </label>
+                    <input type="checkbox" id="probeDistances" checked>
+                </div>
+                <div class="booleanOption">
+                    <label for="carSpeed" title="Current speed of the car">
+                        Car Speed
+                    </label>
+                    <input type="checkbox" id="carSpeed">
+                </div>
+                <div class="booleanOption">
+                    <label for="carAngle" title="Current angle of the car (+X is 0)">
+                        Car Angle
+                    </label>
+                    <input type="checkbox" id="carAngle">
+                </div>
+                <div class="booleanOption">
+                    <label for="carPosition" title="Current position of the car (X, Y); Track centre is origin (0, 0)">
+                        Car Position
+                    </label>
+                    <input type="checkbox" id="carPosition">
+                </div>
+                <div class="booleanOption">
+                    <label for="trackAngle" title="Angle between the car and the track center (+X is 0)">
+                        Track Angle
+                    </label>
+                    <input type="checkbox" id="trackAngle">
+                </div>
+                <div class="booleanOption">
+                    <label for="lapCount" title="Current lap count of the car">
+                        Lap Count
+                    </label>
+                    <input type="checkbox" id="lapCount">
+                </div>
+                <div class="booleanOption">
+                    <label for="onTrack" title="Is the car currently on the track? (1/0 = Y/N)">
+                        On Track?
+                    </label>
+                    <input type="checkbox" id="onTrack">
+                </div>
+                <div class="booleanOption">
+                    <label for="carScore" title="Current score of the car (See scoring system)">
+                        Car Score
+                    </label>
+                    <input type="checkbox" id="carScore">
+                </div>
+                <div class="booleanOption">
+                    <label for="tickNumber" title="Current tick number">
+                        Current Tick
+                    </label>
+                    <input type="checkbox" id="tickNumber">
+                </div>
+            </div>
             <div class="diagramContainer">
                 <canvas id="neuralNetworkCanvas"></canvas>
                 <div id="layerContainer">

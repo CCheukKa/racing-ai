@@ -192,7 +192,7 @@ class Car {
         this.x = x;
         this.y = y;
         this.probes = probeAngles.map(angle => new Probe(angle));
-        this.network = new Network([this.probes.length + 3, ...hiddenLayerSizes, 2]);
+        this.network = new Network([getInputLayerSize(), ...hiddenLayerSizes, 2]);
         this.colour = getRandomColour();
     }
     reset() {
@@ -292,7 +292,7 @@ function processCars() {
         car.engineInput = +throttleButtonPressed - +brakeButtonPressed;
         car.steerInput = +rightButtonPressed - +leftButtonPressed;
         const probeDistances = car.updateProbes();
-        [car.engineInput, car.steerInput] = car.network.predict([...probeDistances, car.speed, car.angle, car.originAngle]);
+        [car.engineInput, car.steerInput] = car.network.predict(getInputLayerValues(car, probeDistances));
         car.move();
     });
 }
@@ -413,8 +413,11 @@ probeAnglesInput.addEventListener('blur', () => {
         .replace(/\.$/gm, '');
     onProbeAnglesInput();
 });
+document.addEventListener('DOMContentLoaded', onProbeAnglesInput);
 function onProbeAnglesInput() {
-    probeAngles = probeAnglesInput.value.trim().split('\n').map(angle => parseFloat(angle.trim()) * (Math.PI / 180));
+    probeAngles = probeAnglesInput.value.trim().split('\n')
+        .map(angle => parseFloat(angle.trim()) * (Math.PI / 180))
+        .filter(angle => !isNaN(angle));
     redrawGarage();
     redrawNeuralNetwork();
 }
@@ -502,14 +505,87 @@ class Network {
         return hash;
     }
 }
-//#endregion
-//#region Neural Network UI
-/* ----------------------------- Neural Network UI --------------------------- */
+const neuralNetworkInputOptions = {
+    probeDistances: { element: document.getElementById('probeDistances') },
+    carSpeed: { element: document.getElementById('carSpeed') },
+    carAngle: { element: document.getElementById('carAngle') },
+    carPosition: { element: document.getElementById('carPosition') },
+    trackAngle: { element: document.getElementById('trackAngle') },
+    lapCount: { element: document.getElementById('lapCount') },
+    onTrack: { element: document.getElementById('onTrack') },
+    carScore: { element: document.getElementById('carScore') },
+    tickNumber: { element: document.getElementById('tickNumber') },
+};
+document.addEventListener('DOMContentLoaded', () => {
+    Object.keys(neuralNetworkInputOptions).forEach((key) => {
+        const typedKey = key;
+        const inputOption = neuralNetworkInputOptions[typedKey];
+        if (!inputOption.element) {
+            throw new Error(`Input element for ${typedKey} not found`);
+        }
+        lockableElements.push(inputOption.element);
+        inputOption.element.addEventListener('change', onInputChange);
+        onInputChange();
+        function onInputChange() {
+            if (areInputsLocked) {
+                return;
+            }
+            inputOption.value = inputOption.element.checked;
+            redrawNeuralNetwork();
+        }
+    });
+});
+function getInputLayerSize() {
+    let size = 0;
+    if (neuralNetworkInputOptions.probeDistances.value) {
+        size += probeAngles.length;
+    } // Probe distances
+    if (neuralNetworkInputOptions.carSpeed.value) {
+        size++;
+    }
+    if (neuralNetworkInputOptions.carAngle.value) {
+        size++;
+    }
+    if (neuralNetworkInputOptions.carPosition.value) {
+        size += 2;
+    } // x and y position
+    if (neuralNetworkInputOptions.trackAngle.value) {
+        size++;
+    }
+    if (neuralNetworkInputOptions.lapCount.value) {
+        size++;
+    }
+    if (neuralNetworkInputOptions.onTrack.value) {
+        size++;
+    }
+    if (neuralNetworkInputOptions.carScore.value) {
+        size++;
+    }
+    if (neuralNetworkInputOptions.tickNumber.value) {
+        size++;
+    }
+    return size;
+}
+function getInputLayerValues(car, probeDistances) {
+    const options = neuralNetworkInputOptions;
+    let inputLayerValues = [
+        ...options.probeDistances.value ? probeDistances : [],
+        options.carSpeed.value ? car.speed : 0,
+        options.carAngle.value ? car.angle : 0,
+        ...options.carPosition.value ? [car.x - CANVAS_WIDTH / 2, car.y - CANVAS_HEIGHT / 2] : [],
+        options.trackAngle.value ? car.originAngle : 0,
+        options.lapCount.value ? car.lapCount : 0,
+        options.onTrack.value ? (car.isOnTrack ? 1 : 0) : 0,
+        options.carScore.value ? car.score : 0,
+        options.tickNumber.value ? tickCount : 0
+    ];
+    return inputLayerValues;
+}
 document.addEventListener('DOMContentLoaded', redrawNeuralNetwork);
 function redrawNeuralNetwork() {
     neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
     // calculate node positions
-    const layerSizes = [probeAngles.length + 3, ...hiddenLayerSizes, 2];
+    const layerSizes = [getInputLayerSize(), ...hiddenLayerSizes, 2];
     const layerCount = layerSizes.length;
     const maxLayerSize = Math.max(...layerSizes);
     const nodeRadius = Math.min(neuralNetworkCanvas.height / maxLayerSize / 2 - 2, neuralNetworkCanvas.width / layerCount / 2 - 3);
@@ -560,9 +636,11 @@ function redrawNeuralNetwork() {
     }
     // draw node labels
     const fontSize = nodeRadius * 1.6;
-    for (let i = 0; i < layerSizes[0]; i++) {
-        const { x, y } = nodePositions[0][i];
-        drawText(neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
+    if (neuralNetworkInputOptions.probeDistances.value) {
+        for (let i = 0; i < probeAngles.length; i++) {
+            const { x, y } = nodePositions[0][i];
+            drawText(neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
+        }
     }
     drawText(neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
     drawText(neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
