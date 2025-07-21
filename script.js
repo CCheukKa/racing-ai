@@ -281,7 +281,6 @@ function handleKeyEvent(event) {
             break;
     }
 }
-const TICK_LIMIT = 2000;
 let tickCount = 0;
 function tickGame() {
     // console.log(`Tick: ${tickCount}`);
@@ -289,7 +288,7 @@ function tickGame() {
     processCars();
     cars.forEach(updateRoadScore);
     drawCars();
-    if (++tickCount >= TICK_LIMIT) {
+    if (++tickCount >= naturalSelectionInputOptions.tickLimit.value) {
         cars.forEach((car) => {
             car.score += getPerformanceScore(car, tickCount);
         });
@@ -451,7 +450,6 @@ function redrawGarage() {
 //#endregion
 //#region Neural Network
 /* ----------------------------- Neural Network ----------------------------- */
-const learningRate = 0.5;
 const activationFunction = (x) => Math.tanh(x);
 let hiddenLayerSizes = [];
 class LNodes {
@@ -489,8 +487,8 @@ class Network {
     mutate() {
         this.layers.forEach(layer => {
             layer.nodes.forEach(node => {
-                node.weights = node.weights.map(weight => weight + (Math.random() - 0.5) * learningRate);
-                node.bias += (Math.random() - 0.5) * learningRate;
+                node.weights = node.weights.map(weight => weight + (Math.random() - 0.5) * naturalSelectionInputOptions.mutationRate.value);
+                node.bias += (Math.random() - 0.5) * naturalSelectionInputOptions.mutationRate.value;
             });
         });
         return this;
@@ -684,12 +682,11 @@ hiddenLayerInput.addEventListener('input', () => {
 //#region Natural Selection
 /* ---------------------------- Natural Selection --------------------------- */
 let cars = [];
-const TARGET_POPULATION_SIZE = 50;
 function startNaturalSelection() {
     if (probeAngles === null) {
         return false;
     }
-    cars = Array.from({ length: TARGET_POPULATION_SIZE }, () => new Car(undefined, undefined, probeAngles));
+    cars = Array.from({ length: naturalSelectionInputOptions.populationSize.value }, () => new Car(undefined, undefined, probeAngles));
     setTimeout(startGeneration, 0);
     return true;
 }
@@ -705,15 +702,15 @@ function endGeneration() {
     sortedCars.forEach((car, index) => {
         car.rank = index + 1;
         const willSurvive = Math.random() < survivalProbability(car.rank);
-        console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / TICK_LIMIT}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
+        console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / naturalSelectionInputOptions.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
         if (willSurvive) {
             survivedCars.push(car);
         }
     });
-    console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / TICK_LIMIT}, Hash: ${sortedCars[0].network.getHash()} *****`);
+    console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / naturalSelectionInputOptions.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
     console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
     cars = [...survivedCars];
-    while (cars.length < TARGET_POPULATION_SIZE) {
+    while (cars.length < naturalSelectionInputOptions.populationSize.value) {
         for (const car of survivedCars) {
             if (Math.random() > reproductionProbability(car.rank)) {
                 continue;
@@ -728,13 +725,36 @@ function endGeneration() {
     requestAnimationFrame(startGeneration);
 }
 function survivalProbability(rank) {
-    const harshness = 4;
-    return Math.exp(-(rank - 1) / TARGET_POPULATION_SIZE * harshness);
+    return Math.exp(-(rank - 1) / naturalSelectionInputOptions.populationSize.value * naturalSelectionInputOptions.survivalHarshness.value);
 }
 function reproductionProbability(rank) {
-    const harshness = 1;
-    return Math.exp(-(rank - 1) / TARGET_POPULATION_SIZE * harshness);
+    return Math.exp(-(rank - 1) / naturalSelectionInputOptions.populationSize.value * naturalSelectionInputOptions.reproductionHarshness.value);
 }
+const naturalSelectionInputOptions = {
+    tickLimit: { element: document.getElementById('tickLimit'), value: NaN },
+    populationSize: { element: document.getElementById('populationSize'), value: NaN },
+    survivalHarshness: { element: document.getElementById('survivalHarshness'), value: NaN },
+    reproductionHarshness: { element: document.getElementById('reproductionHarshness'), value: NaN },
+    mutationRate: { element: document.getElementById('mutationRate'), value: NaN },
+};
+document.addEventListener('DOMContentLoaded', () => {
+    Object.keys(naturalSelectionInputOptions).forEach((key) => {
+        const typedKey = key;
+        const inputOption = naturalSelectionInputOptions[typedKey];
+        if (!inputOption.element) {
+            throw new Error(`Input element for ${typedKey} not found`);
+        }
+        lockableElements.push(inputOption.element);
+        inputOption.element.addEventListener('change', onInputChange);
+        onInputChange();
+        function onInputChange() {
+            const newValue = inputOption.element.valueAsNumber;
+            if (!isNaN(newValue)) {
+                inputOption.value = newValue;
+            }
+        }
+    });
+});
 //#endregion
 //#region Graphics
 /* -------------------------------- Graphics -------------------------------- */

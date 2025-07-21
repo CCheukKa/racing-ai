@@ -289,6 +289,53 @@ body {
 
     &>.naturalSelectionContainer {
         grid-area: 1 / 1 / 2 / 2;
+
+        .inputControlContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            margin: 10px;
+
+            .option {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+
+                input {
+                    width: 100px;
+                    text-align: right;
+                    padding-right: 5px;
+                    resize: none;
+                    scrollbar-width: thin;
+                    background-color: #ffffff20;
+                    border: none;
+                    color: #ffffff;
+                    border-radius: 2px;
+                    font-family: 'Courier New', Courier, monospace;
+                    font-weight: bold;
+
+                    &::-webkit-inner-spin-button,
+                    &::-webkit-outer-spin-button {
+                        -webkit-appearance: none;
+                        margin: 0;
+                    }
+
+                    &:invalid,
+                    &:user-invalid {
+                        background-color: #ff0000a0;
+                    }
+                }
+            }
+
+            label {
+                cursor: help;
+                font-weight: normal;
+            }
+        }
     }
 
     &>.leaderboardContainer {

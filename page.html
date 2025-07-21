@@ -117,10 +117,46 @@
         </div>
         <div class="naturalSelectionContainer outline">
             <div class="whatText">Natural Selection</div>
-            <div class="toolbar">
-                <button id="startButton">Start</button>
-                <span id="tickCounter"></span>
+            <div class="inputControlContainer">
+                <div class="option">
+                    <label for="tickLimit" title="Maximum number of ticks per generation">
+                        Ticks per Generation
+                    </label>
+                    <input required type="number" id="tickLimit" placeholder="2000" value="2000" min="1">
+                </div>
+                <div class="option">
+                    <label for="populationSize"
+                        title="Number of cars in each generation; Varies depending on reproduction probabilities">
+                        Target Population Size
+                    </label>
+                    <input required type="number" id="populationSize" placeholder="50" value="50" min="1">
+                </div>
+                <div class="option">
+                    <label for="survivalHarshness"
+                        title="Higher values mean lower-ranked cars are more likely to be eliminated (0 = no elimination)">
+                        Survival Harshness
+                    </label>
+                    <input required type="number" id="survivalHarshness" placeholder="4" value="4" min="0"
+                        step="0.00001">
+                </div>
+                <div class="option">
+                    <label for="reproductionHarshness"
+                        title="Higher values mean lower-ranked cars are less likely to reproduce (0 = always reproduce)">
+                        Reproduction Harshness
+                    </label>
+                    <input required type="number" id="reproductionHarshness" placeholder="1" value="1" min="0"
+                        step="0.00001">
+                </div>
+                <div class="option">
+                    <label for="mutationRate" title="Higher values mean children mutate more (0 = no mutations)">
+                        Neural Network Mutation Rate
+                    </label>
+                    <input required type="number" id="mutationRate" placeholder="0.5" value="0.5" min="0"
+                        step="0.00001">
+                </div>
             </div>
+            <button id="startButton">Start</button>
+            <span id="tickCounter"></span>
         </div>
         <div class="leaderboardContainer outline">
             <div class="whatText">Leaderboard</div>
