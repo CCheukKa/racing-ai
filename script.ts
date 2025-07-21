@@ -54,7 +54,7 @@ neuralNetworkCanvas.height = 220;
 const layerContainer = document.getElementById('layerContainer') as HTMLDivElement;
 const inputLayerElement = document.getElementById('inputLayer') as HTMLDivElement;
 const outputLayerElement = document.getElementById('outputLayer') as HTMLDivElement;
-const hiddenLayerInput = document.getElementById('hiddenLayers') as HTMLTextAreaElement;
+const hiddenLayerInput = document.getElementById('hiddenLayers') as HTMLInputElement;
 
 //! lock inputs
 const lockableElements: (HTMLButtonElement | HTMLTextAreaElement | HTMLInputElement)[] = [startButton, probeAnglesInput, hiddenLayerInput];
