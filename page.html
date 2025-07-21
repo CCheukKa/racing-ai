@@ -6,8 +6,10 @@
     <title>Racing AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
+
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
@@ -159,6 +161,24 @@
                         Parent should Mutate?
                     </label>
                     <input type="checkbox" id="parentShouldMutate">
+                </div>
+            </div>
+            <div class="statusBoard">
+                <div class="header">
+                    <div>Gen</div>
+                    <div>Population</div>
+                    <div>Survival</div>
+                    <div>Best Score</div>
+                </div>
+                <div id="naturalSelectionLog" class="scroll">
+                    <template id="naturalSelectionEntryTemplate">
+                        <div class="row">
+                            <div class="generation"></div>
+                            <div class="population"></div>
+                            <div class="survivors"></div>
+                            <div class="bestScore"></div>
+                        </div>
+                    </template>
                 </div>
             </div>
             <button id="startButton">Start</button>

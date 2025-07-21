@@ -692,9 +692,17 @@ function startNaturalSelection() {
 }
 let generationCount = 0;
 function startGeneration() {
-    console.log(`---------- Starting Generation ${++generationCount} with ${cars.length} cars ----------`);
+    generationCount++;
+    console.log(`---------- Starting Generation ${generationCount} with ${cars.length} cars ----------`);
     cars.forEach(car => car.reset());
-    tickGame();
+    requestAnimationFrame(tickGame);
+    naturalSelectionLog.push({
+        generation: generationCount,
+        populationSize: naturalSelectionInputOptions.populationSize.value,
+        survivors: undefined,
+        bestScore: undefined
+    });
+    updateNaturalSelectionLog();
 }
 function endGeneration() {
     const survivedCars = [];
@@ -727,6 +735,14 @@ function endGeneration() {
     }
     cars = [...survivedCars, ...newCars];
     requestAnimationFrame(startGeneration);
+    naturalSelectionLog[naturalSelectionLog.length - 1] = {
+        generation: generationCount,
+        populationSize: naturalSelectionInputOptions.populationSize.value,
+        survivors: survivedCars.length,
+        bestScore: sortedCars[0].score
+    };
+    updateNaturalSelectionLog();
+    console.log(`---------- End of Generation ${generationCount} ----------`);
 }
 function survivalProbability(rank) {
     return Math.exp(-(rank - 1) / naturalSelectionInputOptions.populationSize.value * naturalSelectionInputOptions.survivalHarshness.value);
@@ -764,6 +780,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+const naturalSelectionLogElement = document.getElementById('naturalSelectionLog');
+const naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate');
+const naturalSelectionLog = [];
+function updateNaturalSelectionLog() {
+    console.log('Updating Natural Selection Log');
+    const shouldAutoScroll = naturalSelectionLogElement.scrollHeight - naturalSelectionLogElement.scrollTop <= naturalSelectionLogElement.clientHeight + 10;
+    naturalSelectionLogElement.innerHTML = '';
+    naturalSelectionLog.forEach(entry => {
+        const entryElement = naturalSelectionEntryTemplate.content.cloneNode(true);
+        entryElement.querySelector('.generation').textContent = entry.generation.toString();
+        entryElement.querySelector('.population').textContent = entry.populationSize.toString();
+        entryElement.querySelector('.survivors').textContent = entry.survivors ? `${(entry.survivors / entry.populationSize * 100).toFixed(2)}%` : '⏳';
+        entryElement.querySelector('.bestScore').textContent = entry.bestScore ? entry.bestScore.toFixed(2) : '⏳';
+        naturalSelectionLogElement.appendChild(entryElement);
+    });
+    if (shouldAutoScroll) {
+        naturalSelectionLogElement.scrollTop = naturalSelectionLogElement.scrollHeight;
+    }
+}
 //#endregion
 //#region Graphics
 /* -------------------------------- Graphics -------------------------------- */

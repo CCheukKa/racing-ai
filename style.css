@@ -26,7 +26,7 @@ body {
 
 .outline {
     border-radius: 10px;
-    outline: 1px solid white;
+    outline: 2px solid #ffffff60;
 }
 
 #whatButton {
@@ -65,6 +65,8 @@ body {
     justify-content: center;
     border-radius: 10px;
     text-align: center;
+
+    translate: calc(var(--padding) * -1) calc(var(--padding) * -1);
 }
 
 .mainContainer {
@@ -172,7 +174,7 @@ body {
                 border: none;
                 color: #ffffff;
                 border-radius: 2px;
-                font-family: 'Courier New', Courier, monospace;
+                font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
                 font-weight: bold;
             }
         }
@@ -277,7 +279,7 @@ body {
                 line-height: 30px;
                 overflow: hidden;
                 width: 100%;
-                font-family: 'Courier New', Courier, monospace;
+                font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
                 font-weight: bold;
 
                 &:disabled {
@@ -290,13 +292,18 @@ body {
     &>.naturalSelectionContainer {
         grid-area: 1 / 1 / 2 / 2;
 
+        --padding: 10px;
+        display: flex;
+        flex-direction: column;
+        padding: var(--padding);
+        gap: 10px;
+
         .inputControlContainer {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 2px;
-            margin: 10px;
 
             .option {
                 display: flex;
@@ -315,7 +322,7 @@ body {
                     border: none;
                     color: #ffffff;
                     border-radius: 2px;
-                    font-family: 'Courier New', Courier, monospace;
+                    font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
                     font-weight: bold;
 
                     &::-webkit-inner-spin-button,
@@ -338,6 +345,68 @@ body {
             label {
                 cursor: help;
                 font-weight: normal;
+            }
+        }
+
+        .statusBoard {
+            flex-grow: 1;
+            outline: 2px solid #ffffff20;
+            border-radius: 5px;
+            background-color: #00000060;
+
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+
+            .header,
+            .row {
+                display: grid;
+                grid-template-columns: 1fr 2fr 2fr 2fr;
+                font-weight: normal;
+                padding-block: 2px;
+            }
+
+            .header {
+                padding-block: 3px;
+                background-color: #ffffff20;
+
+                div {
+                    text-align: center;
+                    position: relative;
+
+                    &:not(:last-child)::after {
+                        content: '';
+                        position: absolute;
+                        top: -50vh;
+                        right: 0px;
+                        display: block;
+                        height: 100vh;
+                        width: 1px;
+                        background-color: #ffffff20;
+                    }
+                }
+            }
+
+            .row {
+                div {
+                    text-align: right;
+                    padding-right: 10px;
+                    font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
+                }
+            }
+
+            .scroll {
+                overflow-y: auto;
+                direction: rtl;
+                flex-grow: 1;
+
+                scroll-snap-type: proximity;
+                scrollbar-width: thin;
+                scrollbar-color: #ffffff40 #00000040;
+
+                * {
+                    direction: ltr;
+                }
             }
         }
     }

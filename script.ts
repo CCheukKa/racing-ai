@@ -785,9 +785,18 @@ function startNaturalSelection() {
 
 let generationCount = 0;
 function startGeneration() {
-    console.log(`---------- Starting Generation ${++generationCount} with ${cars.length} cars ----------`);
+    generationCount++;
+    console.log(`---------- Starting Generation ${generationCount} with ${cars.length} cars ----------`);
     cars.forEach(car => car.reset());
-    tickGame();
+    requestAnimationFrame(tickGame);
+
+    naturalSelectionLog.push({
+        generation: generationCount,
+        populationSize: naturalSelectionInputOptions.populationSize.value,
+        survivors: undefined,
+        bestScore: undefined
+    })
+    updateNaturalSelectionLog();
 }
 function endGeneration() {
     const survivedCars: Car[] = [];
@@ -883,6 +892,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+const naturalSelectionLogElement = document.getElementById('naturalSelectionLog') as HTMLDivElement;
+const naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate') as HTMLTemplateElement;
+type NaturalSelectionEntry = {
+    generation: number;
+    populationSize: number;
+    survivors: number | undefined;
+    bestScore: number | undefined;
+}
+const naturalSelectionLog: NaturalSelectionEntry[] = [];
+
+function updateNaturalSelectionLog() {
+    console.log('Updating Natural Selection Log');
+    const shouldAutoScroll = naturalSelectionLogElement.scrollHeight - naturalSelectionLogElement.scrollTop <= naturalSelectionLogElement.clientHeight + 10;
+
+    naturalSelectionLogElement.innerHTML = '';
+    naturalSelectionLog.forEach(entry => {
+        const entryElement = naturalSelectionEntryTemplate.content.cloneNode(true) as HTMLDivElement;
+        entryElement.querySelector('.generation')!.textContent = entry.generation.toString();
+        entryElement.querySelector('.population')!.textContent = entry.populationSize.toString();
+        entryElement.querySelector('.survivors')!.textContent = entry.survivors ? `${(entry.survivors / entry.populationSize * 100).toFixed(2)}%` : '⏳';
+        entryElement.querySelector('.bestScore')!.textContent = entry.bestScore ? entry.bestScore.toFixed(2) : '⏳';
+        naturalSelectionLogElement.appendChild(entryElement);
+    });
+
+    if (shouldAutoScroll) { naturalSelectionLogElement.scrollTop = naturalSelectionLogElement.scrollHeight; }
+}
 //#endregion
 
 //#region Graphics
