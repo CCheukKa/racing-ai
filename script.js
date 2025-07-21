@@ -42,7 +42,7 @@ const probeAnglesInput = document.getElementById('probeAngles');
 // neural network
 const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas');
 const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d');
-neuralNetworkCanvas.width = 375;
+neuralNetworkCanvas.width = 350;
 neuralNetworkCanvas.height = 220;
 const layerContainer = document.getElementById('layerContainer');
 const inputLayerElement = document.getElementById('inputLayer');

@@ -48,7 +48,7 @@ const probeAnglesInput = document.getElementById('probeAngles') as HTMLTextAreaE
 // neural network
 const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas') as HTMLCanvasElement;
 const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d') as CanvasRenderingContext2D;
-neuralNetworkCanvas.width = 375;
+neuralNetworkCanvas.width = 350;
 neuralNetworkCanvas.height = 220;
 
 const layerContainer = document.getElementById('layerContainer') as HTMLDivElement;
