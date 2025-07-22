@@ -233,9 +233,9 @@ class Car {
         this.x = x;
         this.y = y;
         this.probes = probeAngles.map(angle => new Probe(angle));
-        this.network = new Network([getInputLayerSize(), ...hiddenLayerSizes, 2]);
+        this.network = new Network([NeuralNetwork.getInputLayerSize(), ...NeuralNetwork.hiddenLayerSizes, 2]);
 
-        this.inputLayerOptions = serialiseInputLayerOptions();
+        this.inputLayerOptions = NeuralNetwork.serialiseInputLayerOptions();
 
         this.colour = getRandomColour()
     }
@@ -363,7 +363,7 @@ function processCars() {
         car.steerInput = +rightButtonPressed - +leftButtonPressed;
 
         car.updateProbes();
-        [car.engineInput, car.steerInput] = car.network.predict(getInputLayerValues(car));
+        [car.engineInput, car.steerInput] = car.network.predict(NeuralNetwork.getInputLayerValues(car));
         car.move();
     });
 }
@@ -503,7 +503,7 @@ function onProbeAnglesInput() {
         .map(angle => parseFloat(angle.trim()) * (Math.PI / 180))
         .filter(angle => !isNaN(angle));
     redrawGarage();
-    redrawNeuralNetwork();
+    NeuralNetwork.redrawNeuralNetwork();
 }
 
 document.addEventListener('DOMContentLoaded', redrawGarage);
@@ -530,12 +530,6 @@ function redrawGarage() {
 
 //#endregion
 
-//#region Neural Network
-/* ----------------------------- Neural Network ----------------------------- */
-const activationFunction = (x: number): number => Math.tanh(x);
-
-let hiddenLayerSizes: number[] = [];
-
 class LNodes {
     public weights: number[];
     public bias: number;
@@ -545,7 +539,6 @@ class LNodes {
         this.bias = numInputs === 0 ? 0 : Math.random() - 0.5;
     }
 }
-
 class Layer {
     public nodes: LNodes[];
 
@@ -553,7 +546,6 @@ class Layer {
         this.nodes = Array.from({ length: numNodes }, () => new LNodes(numInputs));
     }
 }
-
 class Network {
     public inputNodes: number;
     public layers: Layer[];
@@ -575,7 +567,7 @@ class Network {
         for (const layer of this.layers) {
             output = layer.nodes.map(node => {
                 const weightedSum = node.weights.reduce((sum, weight, index) => sum + weight * output[index], 0);
-                return activationFunction(weightedSum + node.bias);
+                return NeuralNetwork.activationFunction(weightedSum + node.bias);
             });
         }
         return output;
@@ -612,28 +604,9 @@ class Network {
         return hash;
     }
 }
-//#endregion
-
-//#region Neural Network UI
-/* ----------------------------- Neural Network UI --------------------------- */
 type SerialisedInputLayerOptions = {
     [key in keyof NeuralNetworkInputOptions]: boolean;
 }
-function serialiseInputLayerOptions(): SerialisedInputLayerOptions {
-    return {
-        probeDistances: neuralNetworkInputOptions.probeDistances.value!,
-        carSpeed: neuralNetworkInputOptions.carSpeed.value!,
-        carAngle: neuralNetworkInputOptions.carAngle.value!,
-        carPosition: neuralNetworkInputOptions.carPosition.value!,
-        trackAngle: neuralNetworkInputOptions.trackAngle.value!,
-        lapCount: neuralNetworkInputOptions.lapCount.value!,
-        onTrack: neuralNetworkInputOptions.onTrack.value!,
-        roadScore: neuralNetworkInputOptions.roadScore.value!,
-        performanceScore: neuralNetworkInputOptions.performanceScore.value!,
-        tickNumber: neuralNetworkInputOptions.tickNumber.value!,
-    };
-}
-
 type NeuralNetworkInputOption = {
     element: HTMLInputElement;
     value?: boolean;
@@ -650,155 +623,182 @@ type NeuralNetworkInputOptions = {
     performanceScore: NeuralNetworkInputOption,
     tickNumber: NeuralNetworkInputOption,
 };
-const neuralNetworkInputOptions: NeuralNetworkInputOptions = {
-    probeDistances: { element: document.getElementById('probeDistances') as HTMLInputElement },
-    carSpeed: { element: document.getElementById('carSpeed') as HTMLInputElement },
-    carAngle: { element: document.getElementById('carAngle') as HTMLInputElement },
-    carPosition: { element: document.getElementById('carPosition') as HTMLInputElement },
-    trackAngle: { element: document.getElementById('trackAngle') as HTMLInputElement },
-    lapCount: { element: document.getElementById('lapCount') as HTMLInputElement },
-    onTrack: { element: document.getElementById('onTrack') as HTMLInputElement },
-    roadScore: { element: document.getElementById('roadScore') as HTMLInputElement },
-    performanceScore: { element: document.getElementById('performanceScore') as HTMLInputElement },
-    tickNumber: { element: document.getElementById('tickNumber') as HTMLInputElement },
-} as const;
-document.addEventListener('DOMContentLoaded', () => {
-    Object.keys(neuralNetworkInputOptions).forEach((key) => {
-        const typedKey = key as keyof typeof neuralNetworkInputOptions;
-        const inputOption = neuralNetworkInputOptions[typedKey];
-        if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
-        lockableElements.push(inputOption.element);
+class NeuralNetwork {
+    /* ---------------------------------- Logic --------------------------------- */
 
-        inputOption.element.addEventListener('change', onInputChange);
-        onInputChange();
+    public static activationFunction = (x: number): number => Math.tanh(x);
 
-        function onInputChange() {
+    public static hiddenLayerSizes: number[] = [];
+    public static getInputLayerSize(): number {
+        let size = 0;
+        if (this.options.probeDistances.value) { size += probeAngles.length; } // Probe distances
+        if (this.options.carSpeed.value) { size++; }
+        if (this.options.carAngle.value) { size++; }
+        if (this.options.carPosition.value) { size += 2; } // x and y position
+        if (this.options.trackAngle.value) { size++; }
+        if (this.options.lapCount.value) { size++; }
+        if (this.options.onTrack.value) { size++; }
+        if (this.options.roadScore.value) { size++; }
+        if (this.options.performanceScore.value) { size++; }
+        if (this.options.tickNumber.value) { size++; }
+        return size;
+    }
+    public static getInputLayerValues(car: Car): number[] {
+        let inputLayerValues: number[] = [
+            ...this.options.probeDistances.value ? car.probes.map(probe => probe.distance) : [],
+            this.options.carSpeed.value ? car.speed : NaN,
+            this.options.carAngle.value ? car.angle : NaN,
+            ...this.options.carPosition.value ? [car.x - STADIUM_WIDTH / 2, car.y - STADIUM_HEIGHT / 2] : [],
+            this.options.trackAngle.value ? car.originAngle : NaN,
+            this.options.lapCount.value ? car.lapCount : NaN,
+            this.options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
+            this.options.roadScore.value ? car.score : NaN,
+            this.options.performanceScore.value ? getPerformanceScore(car, Looper.tickCount) : NaN,
+            this.options.tickNumber.value ? Looper.tickCount : NaN
+        ].filter(value => !isNaN(value));
+        return inputLayerValues
+    }
+
+    /* ----------------------------------- UI ----------------------------------- */
+
+
+    public static serialiseInputLayerOptions(): SerialisedInputLayerOptions {
+        return {
+            probeDistances: this.options.probeDistances.value!,
+            carSpeed: this.options.carSpeed.value!,
+            carAngle: this.options.carAngle.value!,
+            carPosition: this.options.carPosition.value!,
+            trackAngle: this.options.trackAngle.value!,
+            lapCount: this.options.lapCount.value!,
+            onTrack: this.options.onTrack.value!,
+            roadScore: this.options.roadScore.value!,
+            performanceScore: this.options.performanceScore.value!,
+            tickNumber: this.options.tickNumber.value!,
+        };
+    }
+    private static options: NeuralNetworkInputOptions = {
+        probeDistances: { element: document.getElementById('probeDistances') as HTMLInputElement },
+        carSpeed: { element: document.getElementById('carSpeed') as HTMLInputElement },
+        carAngle: { element: document.getElementById('carAngle') as HTMLInputElement },
+        carPosition: { element: document.getElementById('carPosition') as HTMLInputElement },
+        trackAngle: { element: document.getElementById('trackAngle') as HTMLInputElement },
+        lapCount: { element: document.getElementById('lapCount') as HTMLInputElement },
+        onTrack: { element: document.getElementById('onTrack') as HTMLInputElement },
+        roadScore: { element: document.getElementById('roadScore') as HTMLInputElement },
+        performanceScore: { element: document.getElementById('performanceScore') as HTMLInputElement },
+        tickNumber: { element: document.getElementById('tickNumber') as HTMLInputElement },
+    } as const;
+
+    public static redrawNeuralNetwork() {
+        neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
+
+        // calculate node positions
+        const layerSizes = [this.getInputLayerSize(), ...this.hiddenLayerSizes, 2];
+        const layerCount = layerSizes.length;
+        const maxLayerSize = Math.max(...layerSizes);
+        const nodeRadius = Math.min(
+            neuralNetworkCanvas.height / maxLayerSize / 2 - 2,
+            neuralNetworkCanvas.width / layerCount / 2 - 3
+        );
+        const nodeHeight = neuralNetworkCanvas.height / maxLayerSize;
+        const layerWidth = (neuralNetworkCanvas.width - nodeRadius * 2) / (layerCount - 1);
+        const nodePositions: { x: number, y: number }[][] = [];
+        for (let i = 0; i < layerCount; i++) {
+            const layerSize = layerSizes[i];
+            const layerX = nodeRadius + i * layerWidth;
+            nodePositions[i] = [];
+            const totalNodesHeight = layerSize * nodeHeight;
+            const verticalOffset = (neuralNetworkCanvas.height - totalNodesHeight) / 2;
+            for (let j = 0; j < layerSize; j++) {
+                const nodeY = verticalOffset + j * nodeHeight + nodeHeight / 2;
+                nodePositions[i].push({ x: layerX, y: nodeY });
+            }
+        }
+
+        // draw connections
+        layerSizes.forEach((layerSize, i) => {
+            if (i === layerCount - 1) { return; } // Skip last layer
+            const nextLayerSize = layerSizes[i + 1];
+            for (let j = 0; j < layerSize; j++) {
+                const { x: x1, y: y1 } = nodePositions[i][j];
+                for (let k = 0; k < nextLayerSize; k++) {
+                    const { x: x2, y: y2 } = nodePositions[i + 1][k];
+                    drawLine(neuralNetworkCtx, x1, y1, x2, y2, 1, '#ffffff40');
+                }
+            }
+        });
+
+        // draw nodes
+        for (let i = 0; i < layerCount; i++) {
+            const layerSize = layerSizes[i];
+            for (let j = 0; j < layerSize; j++) {
+                const { x, y } = nodePositions[i][j];
+                if (i === 0 || i === layerCount - 1) {
+                    const colour = i === 0 ? GARAGE_CAR_COLOUR : TRACK_COLOUR;
+                    drawCircle(neuralNetworkCtx, x, y, nodeRadius, colour);
+                } else {
+                    neuralNetworkCtx.globalCompositeOperation = 'destination-out';
+                    drawCircle(neuralNetworkCtx, x, y, nodeRadius, '#ffffff');
+                    neuralNetworkCtx.globalCompositeOperation = 'source-over'; // Reset to default
+                    drawCircle(neuralNetworkCtx, x, y, nodeRadius, '#ffffff', true);
+                }
+            }
+        }
+
+        // draw node labels
+        const fontSize = nodeRadius * 1.6;
+        if (this.options.probeDistances.value) {
+            for (let i = 0; i < probeAngles.length; i++) {
+                const { x, y } = nodePositions[0][i];
+                drawText(neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
+            }
+        }
+        drawText(neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        drawText(neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+
+        // update layer container
+        inputLayerElement.innerHTML = layerSizes[0].toString();
+        outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
+        inputLayerElement.parentElement!.style.marginLeft = `${nodeRadius}px`;
+        outputLayerElement.parentElement!.style.marginRight = `${nodeRadius}px`;
+    }
+
+    /* ---------------------------------- Code ---------------------------------- */
+
+    public static init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            Object.keys(this.options).forEach((key) => {
+                const typedKey = key as keyof typeof this.options;
+                const inputOption = this.options[typedKey];
+                if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
+                lockableElements.push(inputOption.element);
+
+                inputOption.element.addEventListener('change', onInputChange);
+                onInputChange();
+
+                function onInputChange() {
+                    if (areInputsLocked) { return; }
+                    inputOption.value = inputOption.element.checked;
+                    NeuralNetwork.redrawNeuralNetwork();
+                }
+            });
+        });
+        document.addEventListener('DOMContentLoaded', () => { this.redrawNeuralNetwork() });
+        hiddenLayerInput.addEventListener('input', () => {
             if (areInputsLocked) { return; }
-            inputOption.value = inputOption.element.checked;
-            redrawNeuralNetwork();
-        }
-    });
-});
-
-function getInputLayerSize(): number {
-    let size = 0;
-    if (neuralNetworkInputOptions.probeDistances.value) { size += probeAngles.length; } // Probe distances
-    if (neuralNetworkInputOptions.carSpeed.value) { size++; }
-    if (neuralNetworkInputOptions.carAngle.value) { size++; }
-    if (neuralNetworkInputOptions.carPosition.value) { size += 2; } // x and y position
-    if (neuralNetworkInputOptions.trackAngle.value) { size++; }
-    if (neuralNetworkInputOptions.lapCount.value) { size++; }
-    if (neuralNetworkInputOptions.onTrack.value) { size++; }
-    if (neuralNetworkInputOptions.roadScore.value) { size++; }
-    if (neuralNetworkInputOptions.performanceScore.value) { size++; }
-    if (neuralNetworkInputOptions.tickNumber.value) { size++; }
-    return size;
-}
-function getInputLayerValues(car: Car): number[] {
-    const options = neuralNetworkInputOptions;
-    let inputLayerValues: number[] = [
-        ...options.probeDistances.value ? car.probes.map(probe => probe.distance) : [],
-        options.carSpeed.value ? car.speed : NaN,
-        options.carAngle.value ? car.angle : NaN,
-        ...options.carPosition.value ? [car.x - STADIUM_WIDTH / 2, car.y - STADIUM_HEIGHT / 2] : [],
-        options.trackAngle.value ? car.originAngle : NaN,
-        options.lapCount.value ? car.lapCount : NaN,
-        options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
-        options.roadScore.value ? car.score : NaN,
-        options.performanceScore.value ? getPerformanceScore(car, Looper.tickCount) : NaN,
-        options.tickNumber.value ? Looper.tickCount : NaN
-    ].filter(value => !isNaN(value));
-    return inputLayerValues
-}
-
-document.addEventListener('DOMContentLoaded', redrawNeuralNetwork);
-function redrawNeuralNetwork() {
-    neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
-
-    // calculate node positions
-    const layerSizes = [getInputLayerSize(), ...hiddenLayerSizes, 2];
-    const layerCount = layerSizes.length;
-    const maxLayerSize = Math.max(...layerSizes);
-    const nodeRadius = Math.min(
-        neuralNetworkCanvas.height / maxLayerSize / 2 - 2,
-        neuralNetworkCanvas.width / layerCount / 2 - 3
-    );
-    const nodeHeight = neuralNetworkCanvas.height / maxLayerSize;
-    const layerWidth = (neuralNetworkCanvas.width - nodeRadius * 2) / (layerCount - 1);
-    const nodePositions: { x: number, y: number }[][] = [];
-    for (let i = 0; i < layerCount; i++) {
-        const layerSize = layerSizes[i];
-        const layerX = nodeRadius + i * layerWidth;
-        nodePositions[i] = [];
-        const totalNodesHeight = layerSize * nodeHeight;
-        const verticalOffset = (neuralNetworkCanvas.height - totalNodesHeight) / 2;
-        for (let j = 0; j < layerSize; j++) {
-            const nodeY = verticalOffset + j * nodeHeight + nodeHeight / 2;
-            nodePositions[i].push({ x: layerX, y: nodeY });
-        }
-    }
-
-    // draw connections
-    layerSizes.forEach((layerSize, i) => {
-        if (i === layerCount - 1) { return; } // Skip last layer
-        const nextLayerSize = layerSizes[i + 1];
-        for (let j = 0; j < layerSize; j++) {
-            const { x: x1, y: y1 } = nodePositions[i][j];
-            for (let k = 0; k < nextLayerSize; k++) {
-                const { x: x2, y: y2 } = nodePositions[i + 1][k];
-                drawLine(neuralNetworkCtx, x1, y1, x2, y2, 1, '#ffffff40');
+            hiddenLayerInput.value = hiddenLayerInput.value.replace(/[^0-9 ]/g, '');
+            const input = hiddenLayerInput.value.trim();
+            const newHiddenLayerSizes = input.split(' ').map(size => parseInt(size.trim(), 10)).filter(size => !isNaN(size) && size > 0);
+            if (newHiddenLayerSizes.some(size => size > 50)) {
+                alert('Hidden layer sizes must be between 1 and 50.');
+                return;
             }
-        }
-    });
-
-    // draw nodes
-    for (let i = 0; i < layerCount; i++) {
-        const layerSize = layerSizes[i];
-        for (let j = 0; j < layerSize; j++) {
-            const { x, y } = nodePositions[i][j];
-            if (i === 0 || i === layerCount - 1) {
-                const colour = i === 0 ? GARAGE_CAR_COLOUR : TRACK_COLOUR;
-                drawCircle(neuralNetworkCtx, x, y, nodeRadius, colour);
-            } else {
-                neuralNetworkCtx.globalCompositeOperation = 'destination-out';
-                drawCircle(neuralNetworkCtx, x, y, nodeRadius, '#ffffff');
-                neuralNetworkCtx.globalCompositeOperation = 'source-over'; // Reset to default
-                drawCircle(neuralNetworkCtx, x, y, nodeRadius, '#ffffff', true);
-            }
-        }
+            this.hiddenLayerSizes = newHiddenLayerSizes;
+            this.redrawNeuralNetwork();
+        });
     }
-
-    // draw node labels
-    const fontSize = nodeRadius * 1.6;
-    if (neuralNetworkInputOptions.probeDistances.value) {
-        for (let i = 0; i < probeAngles.length; i++) {
-            const { x, y } = nodePositions[0][i];
-            drawText(neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
-        }
-    }
-    drawText(neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
-    drawText(neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
-
-    // update layer container
-    inputLayerElement.innerHTML = layerSizes[0].toString();
-    outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
-    inputLayerElement.parentElement!.style.marginLeft = `${nodeRadius}px`;
-    outputLayerElement.parentElement!.style.marginRight = `${nodeRadius}px`;
 }
-
-hiddenLayerInput.addEventListener('input', () => {
-    if (areInputsLocked) { return; }
-    hiddenLayerInput.value = hiddenLayerInput.value.replace(/[^0-9 ]/g, '');
-    const input = hiddenLayerInput.value.trim();
-    const newHiddenLayerSizes = input.split(' ').map(size => parseInt(size.trim(), 10)).filter(size => !isNaN(size) && size > 0);
-    if (newHiddenLayerSizes.some(size => size > 50)) {
-        alert('Hidden layer sizes must be between 1 and 50.');
-        return;
-    }
-    hiddenLayerSizes = newHiddenLayerSizes;
-    redrawNeuralNetwork();
-});
-//#endregion
+NeuralNetwork.init();
 
 let cars: Car[] = [];
 
