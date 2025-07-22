@@ -450,68 +450,8 @@ function redrawGarage() {
     garageCtx.restore();
 }
 //#endregion
-class LNodes {
-    constructor(numInputs) {
-        this.weights = Array.from({ length: numInputs }, () => Math.random() - 0.5);
-        this.bias = numInputs === 0 ? 0 : Math.random() - 0.5;
-    }
-}
-class Layer {
-    constructor(numInputs, numNodes) {
-        this.nodes = Array.from({ length: numNodes }, () => new LNodes(numInputs));
-    }
-}
-class Network {
-    constructor(numNodesInLayer) {
-        this.inputNodes = numNodesInLayer[0];
-        this.layers = numNodesInLayer.slice(1).map((numNodes, index) => {
-            const numInputs = index === 0 ? this.inputNodes : numNodesInLayer[index];
-            return new Layer(numInputs, numNodes);
-        });
-    }
-    predict(inputs) {
-        if (inputs.length !== this.inputNodes) {
-            throw new Error(`Expected ${this.inputNodes} inputs, but got ${inputs.length}`);
-        }
-        let output = inputs;
-        for (const layer of this.layers) {
-            output = layer.nodes.map(node => {
-                const weightedSum = node.weights.reduce((sum, weight, index) => sum + weight * output[index], 0);
-                return NeuralNetwork.activationFunction(weightedSum + node.bias);
-            });
-        }
-        return output;
-    }
-    mutate() {
-        this.layers.forEach(layer => {
-            layer.nodes.forEach(node => {
-                node.weights = node.weights.map(weight => weight + (Math.random() - 0.5) * NaturalSelection.options.mutationRate.value);
-                node.bias += (Math.random() - 0.5) * NaturalSelection.options.mutationRate.value;
-            });
-        });
-        return this;
-    }
-    clone() {
-        const newNetwork = new Network([]);
-        newNetwork.inputNodes = this.inputNodes;
-        newNetwork.layers = this.layers.map(layer => new Layer(layer.nodes[0].weights.length, layer.nodes.length));
-        newNetwork.layers.forEach((newLayer, index) => {
-            newLayer.nodes.forEach((newNode, nodeIndex) => {
-                const oldNode = this.layers[index].nodes[nodeIndex];
-                newNode.weights = [...oldNode.weights];
-                newNode.bias = oldNode.bias;
-            });
-        });
-        return newNetwork;
-    }
-    getHash() {
-        const wbString = this.layers.map(layer => layer.nodes.map(node => `${node.weights.join(',')},${node.bias}`).join(';')).join('|');
-        const hash = Array.from(wbString).reduce((hash, char) => {
-            return (hash << 5) - hash + char.charCodeAt(0);
-        }, 0).toString(36);
-        return hash;
-    }
-}
+let cars = [];
+/* -------------------------------------------------------------------------- */
 class NeuralNetwork {
     static getInputLayerSize() {
         let size = 0;
@@ -698,8 +638,70 @@ NeuralNetwork.options = {
     performanceScore: { element: document.getElementById('performanceScore') },
     tickNumber: { element: document.getElementById('tickNumber') },
 };
+class LNodes {
+    constructor(numInputs) {
+        this.weights = Array.from({ length: numInputs }, () => Math.random() - 0.5);
+        this.bias = numInputs === 0 ? 0 : Math.random() - 0.5;
+    }
+}
+class Layer {
+    constructor(numInputs, numNodes) {
+        this.nodes = Array.from({ length: numNodes }, () => new LNodes(numInputs));
+    }
+}
+class Network {
+    constructor(numNodesInLayer) {
+        this.inputNodes = numNodesInLayer[0];
+        this.layers = numNodesInLayer.slice(1).map((numNodes, index) => {
+            const numInputs = index === 0 ? this.inputNodes : numNodesInLayer[index];
+            return new Layer(numInputs, numNodes);
+        });
+    }
+    predict(inputs) {
+        if (inputs.length !== this.inputNodes) {
+            throw new Error(`Expected ${this.inputNodes} inputs, but got ${inputs.length}`);
+        }
+        let output = inputs;
+        for (const layer of this.layers) {
+            output = layer.nodes.map(node => {
+                const weightedSum = node.weights.reduce((sum, weight, index) => sum + weight * output[index], 0);
+                return NeuralNetwork.activationFunction(weightedSum + node.bias);
+            });
+        }
+        return output;
+    }
+    mutate() {
+        this.layers.forEach(layer => {
+            layer.nodes.forEach(node => {
+                node.weights = node.weights.map(weight => weight + (Math.random() - 0.5) * NaturalSelection.options.mutationRate.value);
+                node.bias += (Math.random() - 0.5) * NaturalSelection.options.mutationRate.value;
+            });
+        });
+        return this;
+    }
+    clone() {
+        const newNetwork = new Network([]);
+        newNetwork.inputNodes = this.inputNodes;
+        newNetwork.layers = this.layers.map(layer => new Layer(layer.nodes[0].weights.length, layer.nodes.length));
+        newNetwork.layers.forEach((newLayer, index) => {
+            newLayer.nodes.forEach((newNode, nodeIndex) => {
+                const oldNode = this.layers[index].nodes[nodeIndex];
+                newNode.weights = [...oldNode.weights];
+                newNode.bias = oldNode.bias;
+            });
+        });
+        return newNetwork;
+    }
+    getHash() {
+        const wbString = this.layers.map(layer => layer.nodes.map(node => `${node.weights.join(',')},${node.bias}`).join(';')).join('|');
+        const hash = Array.from(wbString).reduce((hash, char) => {
+            return (hash << 5) - hash + char.charCodeAt(0);
+        }, 0).toString(36);
+        return hash;
+    }
+}
 NeuralNetwork.init();
-let cars = [];
+/* -------------------------------------------------------------------------- */
 class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
     static createInitialBatch() {
@@ -825,6 +827,7 @@ NaturalSelection.naturalSelectionLogElement = document.getElementById('naturalSe
 NaturalSelection.naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate');
 NaturalSelection.naturalSelectionLog = [];
 NaturalSelection.init();
+/* -------------------------------------------------------------------------- */
 const tickCounter = document.getElementById('tickCounter');
 function updateTickCounter() {
     tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
