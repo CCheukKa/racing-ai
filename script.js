@@ -46,6 +46,9 @@ class Stadium {
         cars.push(car);
         this.drawCars();
     }
+    static updateTrackData() {
+        _a.trackData = _a.trackCtx.getImageData(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT).data;
+    }
     static redrawHint(x, y) {
         _a.hintCtx.clearRect(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT);
         drawCircle(_a.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
@@ -139,8 +142,9 @@ class Stadium {
             this.carCanvas.height = this.STADIUM_HEIGHT;
             this.hintCanvas.width = this.STADIUM_WIDTH;
             this.hintCanvas.height = this.STADIUM_HEIGHT;
+            this.redrawHint(NaN, NaN);
+            _a.updateTrackData();
         });
-        document.addEventListener('DOMContentLoaded', () => { this.redrawHint(NaN, NaN); });
         let isLeftMouseDown = false;
         let isRightMouseDown = false;
         let previousX;
@@ -216,7 +220,7 @@ class Stadium {
                 }
                 previousX = x;
                 previousY = y;
-                _a.trackData = _a.trackCtx.getImageData(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT).data;
+                _a.updateTrackData();
             }
             if (isRightMouseDown) {
                 _a.trackCtx.globalCompositeOperation = 'destination-out';
@@ -227,7 +231,7 @@ class Stadium {
                 _a.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
                 previousX = x;
                 previousY = y;
-                _a.trackData = _a.trackCtx.getImageData(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT).data;
+                _a.updateTrackData();
             }
         }
         function handleMouseUp() {
@@ -400,7 +404,10 @@ class Garage {
         this.garageCanvas.width = 300;
         this.garageCanvas.height = 300;
         lockableElements.push(this.probeAnglesInput);
-        document.addEventListener('DOMContentLoaded', () => { this.redraw(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            this.redraw();
+            this.onProbeAnglesInput();
+        });
         this.probeAnglesInput.addEventListener('input', () => {
             if (areInputsLocked) {
                 return;
@@ -427,7 +434,6 @@ class Garage {
                 .replace(/\.$/gm, '');
             this.onProbeAnglesInput();
         });
-        document.addEventListener('DOMContentLoaded', () => { this.onProbeAnglesInput(); });
     }
 }
 _b = Garage;
@@ -596,8 +602,8 @@ class NeuralNetwork {
                     _c.redraw();
                 }
             });
+            this.redraw();
         });
-        document.addEventListener('DOMContentLoaded', () => { this.redraw(); });
         this.hiddenLayerInput.addEventListener('input', () => {
             if (areInputsLocked) {
                 return;
@@ -850,9 +856,13 @@ class LeaderBoard {
             entryElement.querySelector('.rank').textContent = (index + 1).toString();
             entryElement.querySelector('.generation').textContent = carData.generation.toString();
             // entryElement.querySelector('.colour')!.style.backgroundColor = car.colour;
+            entryElement.querySelector('.score').title = carData.score.toString();
             entryElement.querySelector('.score').textContent = carData.score.toPrecision(4);
+            entryElement.querySelector('.lap').title = carData.lapCount.toString();
             entryElement.querySelector('.lap').textContent = carData.lapCount.toFixed(2);
-            entryElement.querySelector('.avgSpeed').textContent = carData.averageSpeed.toFixed(6);
+            entryElement.querySelector('.avgSpeed').title = carData.averageSpeed.toString();
+            entryElement.querySelector('.avgSpeed').textContent = carData.averageSpeed.toFixed(4);
+            entryElement.querySelector('.onTrackPercentage').title = `${(carData.onTrackPercentage * 100)}%`;
             entryElement.querySelector('.onTrackPercentage').textContent = `${(carData.onTrackPercentage * 100).toFixed(2)}%`;
             this.leaderboardElement.appendChild(entryElement);
         });

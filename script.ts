@@ -53,6 +53,10 @@ class Stadium {
         this.drawCars();
     }
 
+    private static updateTrackData() {
+        Stadium.trackData = Stadium.trackCtx.getImageData(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT).data;
+    }
+
     /* ----------------------------------- UI ----------------------------------- */
 
     private static stadiumContainer = document.getElementById('stadiumContainer') as HTMLDivElement;
@@ -183,8 +187,9 @@ class Stadium {
             this.carCanvas.height = this.STADIUM_HEIGHT;
             this.hintCanvas.width = this.STADIUM_WIDTH;
             this.hintCanvas.height = this.STADIUM_HEIGHT;
+            this.redrawHint(NaN, NaN);
+            Stadium.updateTrackData();
         });
-        document.addEventListener('DOMContentLoaded', () => { this.redrawHint(NaN, NaN); });
 
         let isLeftMouseDown = false;
         let isRightMouseDown = false;
@@ -267,7 +272,7 @@ class Stadium {
                 previousX = x;
                 previousY = y;
 
-                Stadium.trackData = Stadium.trackCtx.getImageData(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT).data;
+                Stadium.updateTrackData();
             }
             if (isRightMouseDown) {
                 Stadium.trackCtx.globalCompositeOperation = 'destination-out';
@@ -279,7 +284,7 @@ class Stadium {
                 previousX = x;
                 previousY = y;
 
-                Stadium.trackData = Stadium.trackCtx.getImageData(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT).data;
+                Stadium.updateTrackData();
             }
         }
         function handleMouseUp() {
@@ -492,7 +497,10 @@ class Garage {
 
         lockableElements.push(this.probeAnglesInput);
 
-        document.addEventListener('DOMContentLoaded', () => { this.redraw() });
+        document.addEventListener('DOMContentLoaded', () => {
+            this.redraw();
+            this.onProbeAnglesInput();
+        });
         this.probeAnglesInput.addEventListener('input', () => {
             if (areInputsLocked) { return; }
             this.probeAnglesInput.value = this.probeAnglesInput.value
@@ -516,7 +524,6 @@ class Garage {
                 .replace(/\.$/gm, '');
             this.onProbeAnglesInput();
         });
-        document.addEventListener('DOMContentLoaded', () => { this.onProbeAnglesInput() });
     }
 }
 Garage.init();
@@ -695,8 +702,9 @@ class NeuralNetwork {
                     NeuralNetwork.redraw();
                 }
             });
+
+            this.redraw();
         });
-        document.addEventListener('DOMContentLoaded', () => { this.redraw() });
         this.hiddenLayerInput.addEventListener('input', () => {
             if (areInputsLocked) { return; }
             this.hiddenLayerInput.value = this.hiddenLayerInput.value.replace(/[^0-9 ]/g, '');
@@ -993,9 +1001,13 @@ class LeaderBoard {
             entryElement.querySelector('.rank')!.textContent = (index + 1).toString();
             entryElement.querySelector('.generation')!.textContent = carData.generation.toString();
             // entryElement.querySelector('.colour')!.style.backgroundColor = car.colour;
+            (entryElement.querySelector('.score') as HTMLDivElement).title = carData.score.toString();
             entryElement.querySelector('.score')!.textContent = carData.score.toPrecision(4);
+            (entryElement.querySelector('.lap') as HTMLDivElement).title = carData.lapCount.toString();
             entryElement.querySelector('.lap')!.textContent = carData.lapCount.toFixed(2);
-            entryElement.querySelector('.avgSpeed')!.textContent = carData.averageSpeed.toFixed(6);
+            (entryElement.querySelector('.avgSpeed') as HTMLDivElement).title = carData.averageSpeed.toString();
+            entryElement.querySelector('.avgSpeed')!.textContent = carData.averageSpeed.toFixed(4);
+            (entryElement.querySelector('.onTrackPercentage') as HTMLDivElement).title = `${(carData.onTrackPercentage * 100)}%`;
             entryElement.querySelector('.onTrackPercentage')!.textContent = `${(carData.onTrackPercentage * 100).toFixed(2)}%`;
             this.leaderboardElement.appendChild(entryElement);
         });
