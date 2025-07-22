@@ -1,5 +1,4 @@
 let areInputsLocked = false;
-
 document.addEventListener('DOMContentLoaded', () => {
     Array.from(document.getElementsByClassName('whatText')).forEach(e => {
         const element = e as HTMLElement;
@@ -7,9 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
         element.style.height = element.parentElement?.clientHeight + 'px';
     });
 });
-
-
-//! lock inputs
 const lockableElements: (HTMLButtonElement | HTMLTextAreaElement | HTMLInputElement)[] = [];
 function lockInputs(lock: boolean) {
     if (areInputsLocked === lock) { return };
@@ -18,6 +14,15 @@ function lockInputs(lock: boolean) {
         element.disabled = lock;
     });
 }
+
+const tickCounter = document.getElementById('tickCounter') as HTMLDivElement;
+function updateTickCounter() {
+    tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
+    tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
+}
+document.addEventListener('DOMContentLoaded', updateTickCounter);
+
+let cars: Car[] = [];
 
 /* -------------------------------------------------------------------------- */
 
@@ -514,9 +519,6 @@ class Garage {
 }
 Garage.init();
 
-let cars: Car[] = [];
-
-
 /* -------------------------------------------------------------------------- */
 class NeuralNetwork {
     /* ---------------------------------- Logic --------------------------------- */
@@ -954,12 +956,112 @@ NaturalSelection.init();
 
 /* -------------------------------------------------------------------------- */
 
-const tickCounter = document.getElementById('tickCounter') as HTMLDivElement;
-function updateTickCounter() {
-    tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
-    tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
+class Looper {
+    /* ---------------------------------- Logic --------------------------------- */
+
+    public static tickLoopPaused = true;
+    public static generationLoopStopped = false;
+    public static generationLooper: Generator | null = null;
+
+    public static runLoop(looper: Generator) {
+        function step() {
+            const res = looper.next();
+            if (!res.done) {
+                requestAnimationFrame(step); // Non-blocking
+            }
+        }
+        step();
+    }
+
+    public static generationCount: number = 0;
+    public static * generationLoop() {
+        while (true) {
+            this.generationCount++;
+            console.log(`---------- Starting Generation ${this.generationCount} with ${cars.length} cars ----------`);
+            NaturalSelection.generationStart();
+
+            let tickLooper = this.tickLoop();
+            let tickResult = tickLooper.next();
+            while (!tickResult.done) {
+                // Pause sub loop if requested
+                if (this.tickLoopPaused) {
+                    console.log(`---------- Pausing Generation ${this.generationCount} at tick ${this.tickCount}----------`);
+                    while (this.tickLoopPaused) {
+                        yield;
+                    }
+                }
+                tickResult = tickLooper.next();
+                yield;
+            }
+
+            const survivedCars = NaturalSelection.generationEnd();
+
+            if (this.generationLoopStopped) {
+                console.log(`Generation loop stopped at generation ${this.generationCount}`);
+                this.tickLoopPaused = true;
+                this.tickLoopButton.textContent = 'Resume';
+                // Wait until resumed
+                while (this.tickLoopPaused) {
+                    yield;
+                }
+                this.generationLoopStopped = false;
+                this.generationLoopButton.disabled = false;
+                console.log(`Resuming generation loop at generation ${this.generationCount}`);
+            }
+            NaturalSelection.generationPostEnd(survivedCars);
+        }
+    }
+
+    public static tickCount = 0;
+    public static * tickLoop() {
+        this.tickCount = 0;
+        console.log(`---------- Starting Tick Loop for Generation ${this.generationCount} ----------`);
+        while (this.tickCount < NaturalSelection.options.tickLimit.value) {
+            this.tickCount++;
+            Stadium.tickDo();
+            yield;
+        }
+    }
+
+    /* ----------------------------------- UI ----------------------------------- */
+
+    private static tickLoopButton = document.getElementById('tickLoopButton') as HTMLButtonElement;
+    private static generationLoopButton = document.getElementById('generationLoopButton') as HTMLButtonElement;
+
+    /* ---------------------------------- Code ---------------------------------- */
+
+    public static init() {
+        this.tickLoopButton.addEventListener('click', () => {
+            const firstRun = this.generationLooper === null;
+
+            if (firstRun) {
+                const successful = NaturalSelection.createInitialBatch();
+                if (!successful) { return; }
+
+                this.generationLoopButton.disabled = false;
+                lockInputs(true);
+            }
+
+            this.tickLoopPaused = !this.tickLoopPaused;
+            this.tickLoopButton.textContent = this.tickLoopPaused ? 'Resume' : 'Pause';
+
+            if (firstRun) {
+                this.generationLooper = this.generationLoop();
+                this.runLoop(this.generationLooper);
+            }
+        });
+
+        this.generationLoopButton.addEventListener('click', () => {
+            if (!this.generationLoopStopped) {
+                this.generationLoopStopped = true;
+                this.generationLoopButton.disabled = true;
+            }
+        });
+    }
 }
-document.addEventListener('DOMContentLoaded', updateTickCounter);
+Looper.init();
+
+/* -------------------------------------------------------------------------- */
 
 //#region Graphics
 /* -------------------------------- Graphics -------------------------------- */
@@ -1091,108 +1193,3 @@ function interpolate(value: number, inPoints: number[], outPoints: number[]): nu
 }
 
 //#endregion
-
-class Looper {
-    /* ---------------------------------- Logic --------------------------------- */
-
-    public static tickLoopPaused = true;
-    public static generationLoopStopped = false;
-    public static generationLooper: Generator | null = null;
-
-    public static runLoop(looper: Generator) {
-        function step() {
-            const res = looper.next();
-            if (!res.done) {
-                requestAnimationFrame(step); // Non-blocking
-            }
-        }
-        step();
-    }
-
-    public static generationCount: number = 0;
-    public static * generationLoop() {
-        while (true) {
-            this.generationCount++;
-            console.log(`---------- Starting Generation ${this.generationCount} with ${cars.length} cars ----------`);
-            NaturalSelection.generationStart();
-
-            let tickLooper = this.tickLoop();
-            let tickResult = tickLooper.next();
-            while (!tickResult.done) {
-                // Pause sub loop if requested
-                if (this.tickLoopPaused) {
-                    console.log(`---------- Pausing Generation ${this.generationCount} at tick ${this.tickCount}----------`);
-                    while (this.tickLoopPaused) {
-                        yield;
-                    }
-                }
-                tickResult = tickLooper.next();
-                yield;
-            }
-
-            const survivedCars = NaturalSelection.generationEnd();
-
-            if (this.generationLoopStopped) {
-                console.log(`Generation loop stopped at generation ${this.generationCount}`);
-                this.tickLoopPaused = true;
-                this.tickLoopButton.textContent = 'Resume';
-                // Wait until resumed
-                while (this.tickLoopPaused) {
-                    yield;
-                }
-                this.generationLoopStopped = false;
-                this.generationLoopButton.disabled = false;
-                console.log(`Resuming generation loop at generation ${this.generationCount}`);
-            }
-            NaturalSelection.generationPostEnd(survivedCars);
-        }
-    }
-
-    public static tickCount = 0;
-    public static * tickLoop() {
-        this.tickCount = 0;
-        console.log(`---------- Starting Tick Loop for Generation ${this.generationCount} ----------`);
-        while (this.tickCount < NaturalSelection.options.tickLimit.value) {
-            this.tickCount++;
-            Stadium.tickDo();
-            yield;
-        }
-    }
-
-    /* ----------------------------------- UI ----------------------------------- */
-
-    private static tickLoopButton = document.getElementById('tickLoopButton') as HTMLButtonElement;
-    private static generationLoopButton = document.getElementById('generationLoopButton') as HTMLButtonElement;
-
-    /* ---------------------------------- Code ---------------------------------- */
-
-    public static init() {
-        this.tickLoopButton.addEventListener('click', () => {
-            const firstRun = this.generationLooper === null;
-
-            if (firstRun) {
-                const successful = NaturalSelection.createInitialBatch();
-                if (!successful) { return; }
-
-                this.generationLoopButton.disabled = false;
-                lockInputs(true);
-            }
-
-            this.tickLoopPaused = !this.tickLoopPaused;
-            this.tickLoopButton.textContent = this.tickLoopPaused ? 'Resume' : 'Pause';
-
-            if (firstRun) {
-                this.generationLooper = this.generationLoop();
-                this.runLoop(this.generationLooper);
-            }
-        });
-
-        this.generationLoopButton.addEventListener('click', () => {
-            if (!this.generationLoopStopped) {
-                this.generationLoopStopped = true;
-                this.generationLoopButton.disabled = true;
-            }
-        });
-    }
-}
-Looper.init();
