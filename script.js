@@ -19,6 +19,16 @@ function lockInputs(lock) {
         element.disabled = lock;
     });
 }
+let zoomFactor = 1;
+const mainContainer = document.getElementById('mainContainer');
+document.addEventListener('DOMContentLoaded', () => { onLayoutChange(); });
+window.addEventListener('resize', () => { onLayoutChange(); });
+function onLayoutChange() {
+    console.log('Layout change detected, recalculating zoom factor');
+    const PADDING = 100;
+    zoomFactor = Math.min((document.body.clientHeight - PADDING) / mainContainer.clientHeight, (document.body.clientWidth - PADDING) / mainContainer.clientWidth);
+    mainContainer.style.zoom = zoomFactor.toString();
+}
 let cars = [];
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
@@ -154,8 +164,8 @@ class Stadium {
         });
         document.addEventListener('mousedown', (event) => {
             const rect = this.trackCanvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const x = (event.clientX - rect.left) / zoomFactor;
+            const y = (event.clientY - rect.top) / zoomFactor;
             switch (event.button) {
                 case 0: // Left button
                     handleLeftClick(x, y, event.target);
@@ -172,20 +182,20 @@ class Stadium {
         });
         document.addEventListener('touchstart', (event) => {
             const rect = this.trackCanvas.getBoundingClientRect();
-            const x = event.touches[0].clientX - rect.left;
-            const y = event.touches[0].clientY - rect.top;
+            const x = (event.touches[0].clientX - rect.left) / zoomFactor;
+            const y = (event.touches[0].clientY - rect.top) / zoomFactor;
             handleLeftClick(x, y, event.touches[0].target);
         });
         document.addEventListener('mousemove', (event) => {
             const rect = this.trackCanvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const x = (event.clientX - rect.left) / zoomFactor;
+            const y = (event.clientY - rect.top) / zoomFactor;
             handleMouseMove(x, y);
         });
         document.addEventListener('touchmove', (event) => {
             const rect = this.trackCanvas.getBoundingClientRect();
-            const x = event.touches[0].clientX - rect.left;
-            const y = event.touches[0].clientY - rect.top;
+            const x = (event.touches[0].clientX - rect.left) / zoomFactor;
+            const y = (event.touches[0].clientY - rect.top) / zoomFactor;
             handleMouseMove(x, y);
         });
         document.addEventListener('mouseup', () => {
