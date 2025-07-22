@@ -256,11 +256,15 @@ class Car {
     public grassTicks: number = 0;
     public speedSum: number = 0;
 
+    public inputLayerOptions: SerialisedInputLayerOptions;
+
     constructor(x: number = TRACK_START_X, y: number = TRACK_START_Y, probeAngles: number[] = []) {
         this.x = x;
         this.y = y;
         this.probes = probeAngles.map(angle => new Probe(angle));
         this.network = new Network([getInputLayerSize(), ...hiddenLayerSizes, 2]);
+
+        this.inputLayerOptions = serialiseInputLayerOptions();
 
         this.colour = getRandomColour()
     }
@@ -321,6 +325,34 @@ class Car {
         newCar.network = this.network.clone();
         return newCar;
     }
+}
+
+type SerialisedCarData = {
+    colour: string;
+    probeAngles: number[];
+    lapCount: number;
+    score: number;
+    network: Network;
+    inputLayerOptions: SerialisedInputLayerOptions;
+}
+function serialiseCarData(car: Car): SerialisedCarData {
+    const probeAngles = car.probes.map(probe => probe.angle);
+    return {
+        colour: car.colour,
+        probeAngles: probeAngles,
+        lapCount: car.lapCount,
+        score: car.score,
+        network: car.network,
+        inputLayerOptions: car.inputLayerOptions,
+    };
+}
+function deserialiseCarData(data: SerialisedCarData): Car {
+    const car = new Car(undefined, undefined, data.probeAngles);
+    car.lapCount = data.lapCount;
+    car.score = data.score;
+    car.network = data.network;
+    car.inputLayerOptions = data.inputLayerOptions;
+    return car;
 }
 
 let throttleButtonPressed = false;
@@ -529,7 +561,6 @@ function redrawGarage() {
 
 //#region Neural Network
 /* ----------------------------- Neural Network ----------------------------- */
-
 const activationFunction = (x: number): number => Math.tanh(x);
 
 let hiddenLayerSizes: number[] = [];
@@ -614,6 +645,24 @@ class Network {
 
 //#region Neural Network UI
 /* ----------------------------- Neural Network UI --------------------------- */
+type SerialisedInputLayerOptions = {
+    [key in keyof NeuralNetworkInputOptions]: boolean;
+}
+function serialiseInputLayerOptions(): SerialisedInputLayerOptions {
+    return {
+        probeDistances: neuralNetworkInputOptions.probeDistances.value!,
+        carSpeed: neuralNetworkInputOptions.carSpeed.value!,
+        carAngle: neuralNetworkInputOptions.carAngle.value!,
+        carPosition: neuralNetworkInputOptions.carPosition.value!,
+        trackAngle: neuralNetworkInputOptions.trackAngle.value!,
+        lapCount: neuralNetworkInputOptions.lapCount.value!,
+        onTrack: neuralNetworkInputOptions.onTrack.value!,
+        roadScore: neuralNetworkInputOptions.roadScore.value!,
+        performanceScore: neuralNetworkInputOptions.performanceScore.value!,
+        tickNumber: neuralNetworkInputOptions.tickNumber.value!,
+    };
+}
+
 type NeuralNetworkInputOption = {
     element: HTMLInputElement;
     value?: boolean;

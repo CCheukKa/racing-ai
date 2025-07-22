@@ -224,6 +224,7 @@ class Car {
         this.y = y;
         this.probes = probeAngles.map(angle => new Probe(angle));
         this.network = new Network([getInputLayerSize(), ...hiddenLayerSizes, 2]);
+        this.inputLayerOptions = serialiseInputLayerOptions();
         this.colour = getRandomColour();
     }
     reset() {
@@ -276,6 +277,25 @@ class Car {
         newCar.network = this.network.clone();
         return newCar;
     }
+}
+function serialiseCarData(car) {
+    const probeAngles = car.probes.map(probe => probe.angle);
+    return {
+        colour: car.colour,
+        probeAngles: probeAngles,
+        lapCount: car.lapCount,
+        score: car.score,
+        network: car.network,
+        inputLayerOptions: car.inputLayerOptions,
+    };
+}
+function deserialiseCarData(data) {
+    const car = new Car(undefined, undefined, data.probeAngles);
+    car.lapCount = data.lapCount;
+    car.score = data.score;
+    car.network = data.network;
+    car.inputLayerOptions = data.inputLayerOptions;
+    return car;
 }
 let throttleButtonPressed = false;
 let brakeButtonPressed = false;
@@ -520,6 +540,20 @@ class Network {
         }, 0).toString(36);
         return hash;
     }
+}
+function serialiseInputLayerOptions() {
+    return {
+        probeDistances: neuralNetworkInputOptions.probeDistances.value,
+        carSpeed: neuralNetworkInputOptions.carSpeed.value,
+        carAngle: neuralNetworkInputOptions.carAngle.value,
+        carPosition: neuralNetworkInputOptions.carPosition.value,
+        trackAngle: neuralNetworkInputOptions.trackAngle.value,
+        lapCount: neuralNetworkInputOptions.lapCount.value,
+        onTrack: neuralNetworkInputOptions.onTrack.value,
+        roadScore: neuralNetworkInputOptions.roadScore.value,
+        performanceScore: neuralNetworkInputOptions.performanceScore.value,
+        tickNumber: neuralNetworkInputOptions.tickNumber.value,
+    };
 }
 const neuralNetworkInputOptions = {
     probeDistances: { element: document.getElementById('probeDistances') },
