@@ -27,6 +27,8 @@ function updateTickCounter() {
 document.addEventListener('DOMContentLoaded', updateTickCounter);
 let cars = [];
 /* -------------------------------------------------------------------------- */
+/*                                   Stadium                                  */
+/* -------------------------------------------------------------------------- */
 class Stadium {
     static tickDo() {
         updateTickCounter();
@@ -269,6 +271,8 @@ Stadium.TRACK_START_Y = _a.STADIUM_HEIGHT / 4;
 Stadium.trackData = new Uint8ClampedArray();
 Stadium.init();
 /* -------------------------------------------------------------------------- */
+/*                                    Cars                                    */
+/* -------------------------------------------------------------------------- */
 class Cars {
     static serialiseCarData(car) {
         const probeAngles = car.probes.map(probe => probe.angle);
@@ -369,6 +373,8 @@ class Car {
     }
 }
 /* -------------------------------------------------------------------------- */
+/*                                   Garage                                   */
+/* -------------------------------------------------------------------------- */
 class Garage {
     static onProbeAnglesInput() {
         this.probeAngles = this.probeAnglesInput.value.trim().split('\n')
@@ -435,6 +441,8 @@ Garage.GARAGE_CAR_COLOUR = '#ffa0a0';
 Garage.probeAnglesInput = document.getElementById('probeAngles');
 Garage.probeAngles = [];
 Garage.init();
+/* -------------------------------------------------------------------------- */
+/*                               Neural Network                               */
 /* -------------------------------------------------------------------------- */
 class NeuralNetwork {
     static getInputLayerSize() {
@@ -695,6 +703,8 @@ class Network {
 }
 NeuralNetwork.init();
 /* -------------------------------------------------------------------------- */
+/*                              Natural Selection                             */
+/* -------------------------------------------------------------------------- */
 class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
     static createInitialBatch() {
@@ -820,6 +830,8 @@ NaturalSelection.naturalSelectionLogElement = document.getElementById('naturalSe
 NaturalSelection.naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate');
 NaturalSelection.naturalSelectionLog = [];
 NaturalSelection.init();
+/* -------------------------------------------------------------------------- */
+/*                                   Looper                                   */
 /* -------------------------------------------------------------------------- */
 class Looper {
     static runLoop(looper) {
