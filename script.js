@@ -1,5 +1,5 @@
 "use strict";
-var _a;
+var _a, _b, _c;
 let areInputsLocked = false;
 document.addEventListener('DOMContentLoaded', () => {
     Array.from(document.getElementsByClassName('whatText')).forEach(e => {
@@ -8,37 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         element.style.height = element.parentElement?.clientHeight + 'px';
     });
 });
-//! main
-const stadiumContainer = document.getElementById('stadiumContainer');
-const STADIUM_WIDTH = stadiumContainer.clientWidth;
-const STADIUM_HEIGHT = stadiumContainer.clientHeight;
-const trackCanvas = document.getElementById('trackCanvas');
-const trackCtx = trackCanvas.getContext('2d', { willReadFrequently: true });
-const carCanvas = document.getElementById('carCanvas');
-const carCtx = carCanvas.getContext('2d');
-const hintCanvas = document.getElementById('hintCanvas');
-const hintCtx = hintCanvas.getContext('2d');
-document.addEventListener('DOMContentLoaded', () => {
-    stadiumContainer.style.width = `${STADIUM_WIDTH}px`;
-    stadiumContainer.style.height = `${STADIUM_HEIGHT}px`;
-    trackCanvas.width = STADIUM_WIDTH;
-    trackCanvas.height = STADIUM_HEIGHT;
-    carCanvas.width = STADIUM_WIDTH;
-    carCanvas.height = STADIUM_HEIGHT;
-    hintCanvas.width = STADIUM_WIDTH;
-    hintCanvas.height = STADIUM_HEIGHT;
-});
-//! neural network
-const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas');
-const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d');
-neuralNetworkCanvas.width = 350;
-neuralNetworkCanvas.height = 220;
-const layerContainer = document.getElementById('layerContainer');
-const inputLayerElement = document.getElementById('inputLayer');
-const outputLayerElement = document.getElementById('outputLayer');
-const hiddenLayerInput = document.getElementById('hiddenLayers');
 //! lock inputs
-const lockableElements = [hiddenLayerInput];
+const lockableElements = [];
 function lockInputs(lock) {
     if (areInputsLocked === lock) {
         return;
@@ -49,127 +20,270 @@ function lockInputs(lock) {
         element.disabled = lock;
     });
 }
-//#region Track UI
-/* -------------------------------- Track UI -------------------------------- */
-const TRACK_COLOUR = '#e0e0e0';
-const TRACK_WIDTH = 50;
-const TRACK_START_X = STADIUM_WIDTH / 2;
-const TRACK_START_Y = STADIUM_HEIGHT / 4;
-let isLeftMouseDown = false;
-let isRightMouseDown = false;
-let previousX;
-let previousY;
-let trackData = new Uint8ClampedArray();
-document.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-});
-document.addEventListener('mousedown', (event) => {
-    const rect = trackCanvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    switch (event.button) {
-        case 0: // Left button
-            handleLeftClick(x, y, event.target);
-            break;
-        case 1: // Middle button
-            spawnCar(x, y);
-            break;
-        case 2: // Right button
-            handleRightClick(x, y, event.target);
-            break;
-        default:
+/* -------------------------------------------------------------------------- */
+class Stadium {
+    static tickDo() {
+        updateTickCounter();
+        this.processCars();
+        this.drawCars();
+        cars.forEach(this.updateRoadScore);
+    }
+    static processCars() {
+        cars.forEach(car => {
+            car.updateProbes();
+            [car.engineInput, car.steerInput] = car.network.predict(NeuralNetwork.getInputLayerValues(car));
+            car.move();
+        });
+    }
+    static spawnCar(x, y) {
+        if (x < 0 || x >= _a.STADIUM_WIDTH || y < 0 || y >= _a.STADIUM_HEIGHT) {
+            console.warn('Spawn coordinates out of bounds');
             return;
-    }
-});
-document.addEventListener('touchstart', (event) => {
-    const rect = trackCanvas.getBoundingClientRect();
-    const x = event.touches[0].clientX - rect.left;
-    const y = event.touches[0].clientY - rect.top;
-    handleLeftClick(x, y, event.touches[0].target);
-});
-document.addEventListener('mousemove', (event) => {
-    const rect = trackCanvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    handleMouseMove(x, y);
-});
-document.addEventListener('touchmove', (event) => {
-    const rect = trackCanvas.getBoundingClientRect();
-    const x = event.touches[0].clientX - rect.left;
-    const y = event.touches[0].clientY - rect.top;
-    handleMouseMove(x, y);
-});
-document.addEventListener('mouseup', () => {
-    handleMouseUp();
-});
-document.addEventListener('touchend', () => {
-    handleMouseUp();
-    redrawHint(NaN, NaN);
-});
-function handleLeftClick(x, y, target) {
-    if (shouldDiscardEvent(target)) {
-        return;
-    }
-    isLeftMouseDown = true;
-    isRightMouseDown = false;
-    handleMouseMove(x, y);
-}
-function handleRightClick(x, y, target) {
-    if (shouldDiscardEvent(target)) {
-        return;
-    }
-    isLeftMouseDown = false;
-    isRightMouseDown = true;
-    handleMouseMove(x, y);
-}
-function handleMouseMove(x, y) {
-    redrawHint(x, y);
-    if (isLeftMouseDown) {
-        drawCircle(trackCtx, x, y, TRACK_WIDTH / 2, TRACK_COLOUR);
-        if (previousX !== undefined && previousY !== undefined) {
-            drawLine(trackCtx, previousX, previousY, x, y, TRACK_WIDTH, TRACK_COLOUR);
         }
-        previousX = x;
-        previousY = y;
-        trackData = trackCtx.getImageData(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT).data;
+        const car = new Car(x, y, Garage.probeAngles);
+        cars.push(car);
+        this.drawCars();
     }
-    if (isRightMouseDown) {
-        trackCtx.globalCompositeOperation = 'destination-out';
-        drawCircle(trackCtx, x, y, TRACK_WIDTH / 2, '#ffffff');
-        if (previousX !== undefined && previousY !== undefined) {
-            drawLine(trackCtx, previousX, previousY, x, y, TRACK_WIDTH, '#ffffff');
+    static redrawHint(x, y) {
+        _a.hintCtx.clearRect(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT);
+        drawCircle(_a.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
+        drawCircle(_a.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
+        drawCircle(_a.hintCtx, _a.STADIUM_WIDTH / 2, _a.STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
+        drawCircle(_a.hintCtx, x, y, this.TRACK_WIDTH / 2, '#ffffff', true); // Cursor
+    }
+    static drawCars() {
+        this.carCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
+        this.carCtx.save();
+        cars.forEach(car => {
+            this.carCtx.translate(car.x, car.y);
+            this.carCtx.rotate(car.angle);
+            car.probes.forEach(probe => {
+                const probeLength = probe.distance;
+                const probeX = Math.cos(probe.angle) * probeLength;
+                const probeY = Math.sin(probe.angle) * probeLength;
+                this.carCtx.strokeStyle = `${car.colour}60`;
+                this.carCtx.lineWidth = 2;
+                this.carCtx.beginPath();
+                this.carCtx.moveTo(0, 0);
+                this.carCtx.lineTo(probeX, probeY);
+                this.carCtx.stroke();
+            });
+            drawRectangle(this.carCtx, -_a.CAR_WIDTH / 2, -_a.CAR_HEIGHT / 2, _a.CAR_WIDTH, _a.CAR_HEIGHT, car.colour);
+            drawRectangle(this.carCtx, -_a.CAR_WIDTH / 2, -5, _a.CAR_WIDTH, _a.CAR_HEIGHT, '#000000', true);
+            this.carCtx.resetTransform();
+        });
+        this.carCtx.restore();
+    }
+    static raycastDistance(car, angle) {
+        const rayOrigin = { x: car.x, y: car.y };
+        const cosAngle = Math.cos(car.angle + angle);
+        const sinAngle = Math.sin(car.angle + angle);
+        const maxDistance = 200;
+        const stepSize = 10;
+        for (let distance = 0; distance < maxDistance; distance += stepSize) {
+            const rayEnd = {
+                x: rayOrigin.x + cosAngle * distance,
+                y: rayOrigin.y + sinAngle * distance
+            };
+            if (!this.isOnTrack(rayEnd)) {
+                return distance;
+            }
         }
-        trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
-        previousX = x;
-        previousY = y;
-        trackData = trackCtx.getImageData(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT).data;
+        return maxDistance;
+    }
+    static isOnTrack(point) {
+        if (point.x < 0 || point.x >= this.STADIUM_WIDTH || point.y < 0 || point.y >= this.STADIUM_HEIGHT) {
+            return false; // Out of bounds
+        }
+        const x = Math.floor(point.x);
+        const y = Math.floor(point.y);
+        const index = (y * this.STADIUM_WIDTH + x) * 4;
+        return this.trackData[index + 3] !== 0; // Check alpha channel
+    }
+    static updateRoadScore(car) {
+        car.score += car.isOnTrack ? 0.2 : -5;
+        if (car.isOnTrack) {
+            car.score += interpolate(car.speed, [-1, 0, 1, 5], [-3, -2, 1, 4]);
+        }
+        if (car.previousOriginAngle) {
+            let deltaAngle = car.originAngle - car.previousOriginAngle;
+            if (deltaAngle < -Math.PI) {
+                deltaAngle += 2 * Math.PI;
+            }
+            else if (deltaAngle > Math.PI) {
+                deltaAngle -= 2 * Math.PI;
+            }
+            car.lapCount += deltaAngle / (2 * Math.PI);
+        }
+        car.previousOriginAngle = car.originAngle;
+        car.grassTicks -= +car.isOnTrack;
+        car.speedSum += car.speed;
+        // console.log(`Car at (${car.x.toFixed(2)}, ${car.y.toFixed(2)}) - Speed: ${car.speed.toFixed(2)}, Score: ${car.score.toFixed(2)}, Lap Count: ${car.lapCount.toFixed(2)}`);
+    }
+    static getPerformanceScore(car, atTick) {
+        let score = 0;
+        score += car.lapCount * ((atTick - car.grassTicks) / atTick) ** 2 * 100;
+        score += interpolate(car.speedSum / atTick, [0, 1], [-100, 100]);
+        return score;
+    }
+    /* ---------------------------------- Code ---------------------------------- */
+    static init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
+            this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
+            this.trackCanvas.width = this.STADIUM_WIDTH;
+            this.trackCanvas.height = this.STADIUM_HEIGHT;
+            this.carCanvas.width = this.STADIUM_WIDTH;
+            this.carCanvas.height = this.STADIUM_HEIGHT;
+            this.hintCanvas.width = this.STADIUM_WIDTH;
+            this.hintCanvas.height = this.STADIUM_HEIGHT;
+        });
+        document.addEventListener('DOMContentLoaded', () => { this.redrawHint(NaN, NaN); });
+        let isLeftMouseDown = false;
+        let isRightMouseDown = false;
+        let previousX;
+        let previousY;
+        document.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
+        document.addEventListener('mousedown', (event) => {
+            const rect = this.trackCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            switch (event.button) {
+                case 0: // Left button
+                    handleLeftClick(x, y, event.target);
+                    break;
+                case 1: // Middle button
+                    _a.spawnCar(x, y);
+                    break;
+                case 2: // Right button
+                    handleRightClick(x, y, event.target);
+                    break;
+                default:
+                    return;
+            }
+        });
+        document.addEventListener('touchstart', (event) => {
+            const rect = this.trackCanvas.getBoundingClientRect();
+            const x = event.touches[0].clientX - rect.left;
+            const y = event.touches[0].clientY - rect.top;
+            handleLeftClick(x, y, event.touches[0].target);
+        });
+        document.addEventListener('mousemove', (event) => {
+            const rect = this.trackCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            handleMouseMove(x, y);
+        });
+        document.addEventListener('touchmove', (event) => {
+            const rect = this.trackCanvas.getBoundingClientRect();
+            const x = event.touches[0].clientX - rect.left;
+            const y = event.touches[0].clientY - rect.top;
+            handleMouseMove(x, y);
+        });
+        document.addEventListener('mouseup', () => {
+            handleMouseUp();
+        });
+        document.addEventListener('touchend', () => {
+            handleMouseUp();
+            this.redrawHint(NaN, NaN);
+        });
+        function handleLeftClick(x, y, target) {
+            if (shouldDiscardEvent(target)) {
+                return;
+            }
+            isLeftMouseDown = true;
+            isRightMouseDown = false;
+            handleMouseMove(x, y);
+        }
+        function handleRightClick(x, y, target) {
+            if (shouldDiscardEvent(target)) {
+                return;
+            }
+            isLeftMouseDown = false;
+            isRightMouseDown = true;
+            handleMouseMove(x, y);
+        }
+        function handleMouseMove(x, y) {
+            _a.redrawHint(x, y);
+            if (isLeftMouseDown) {
+                drawCircle(_a.trackCtx, x, y, _a.TRACK_WIDTH / 2, _a.TRACK_COLOUR);
+                if (previousX !== undefined && previousY !== undefined) {
+                    drawLine(_a.trackCtx, previousX, previousY, x, y, _a.TRACK_WIDTH, _a.TRACK_COLOUR);
+                }
+                previousX = x;
+                previousY = y;
+                _a.trackData = _a.trackCtx.getImageData(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT).data;
+            }
+            if (isRightMouseDown) {
+                _a.trackCtx.globalCompositeOperation = 'destination-out';
+                drawCircle(_a.trackCtx, x, y, _a.TRACK_WIDTH / 2, '#ffffff');
+                if (previousX !== undefined && previousY !== undefined) {
+                    drawLine(_a.trackCtx, previousX, previousY, x, y, _a.TRACK_WIDTH, '#ffffff');
+                }
+                _a.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
+                previousX = x;
+                previousY = y;
+                _a.trackData = _a.trackCtx.getImageData(0, 0, _a.STADIUM_WIDTH, _a.STADIUM_HEIGHT).data;
+            }
+        }
+        function handleMouseUp() {
+            isLeftMouseDown = false;
+            isRightMouseDown = false;
+            previousX = undefined;
+            previousY = undefined;
+        }
+        function shouldDiscardEvent(target) {
+            return target instanceof HTMLInputElement
+                || target instanceof HTMLTextAreaElement
+                || target instanceof HTMLButtonElement
+                || target instanceof HTMLSelectElement;
+        }
     }
 }
-function handleMouseUp() {
-    isLeftMouseDown = false;
-    isRightMouseDown = false;
-    previousX = undefined;
-    previousY = undefined;
+_a = Stadium;
+/* ---------------------------------- Logic --------------------------------- */
+Stadium.CAR_WIDTH = 20;
+Stadium.CAR_HEIGHT = 10;
+/* ----------------------------------- UI ----------------------------------- */
+Stadium.stadiumContainer = document.getElementById('stadiumContainer');
+Stadium.STADIUM_WIDTH = _a.stadiumContainer.clientWidth;
+Stadium.STADIUM_HEIGHT = _a.stadiumContainer.clientHeight;
+Stadium.trackCanvas = document.getElementById('trackCanvas');
+Stadium.trackCtx = _a.trackCanvas.getContext('2d', { willReadFrequently: true });
+Stadium.carCanvas = document.getElementById('carCanvas');
+Stadium.carCtx = _a.carCanvas.getContext('2d');
+Stadium.hintCanvas = document.getElementById('hintCanvas');
+Stadium.hintCtx = _a.hintCanvas.getContext('2d');
+Stadium.TRACK_COLOUR = '#e0e0e0';
+Stadium.TRACK_WIDTH = 50;
+Stadium.TRACK_START_X = _a.STADIUM_WIDTH / 2;
+Stadium.TRACK_START_Y = _a.STADIUM_HEIGHT / 4;
+Stadium.trackData = new Uint8ClampedArray();
+Stadium.init();
+/* -------------------------------------------------------------------------- */
+class Cars {
+    static serialiseCarData(car) {
+        const probeAngles = car.probes.map(probe => probe.angle);
+        return {
+            colour: car.colour,
+            probeAngles: probeAngles,
+            lapCount: car.lapCount,
+            score: car.score,
+            network: car.network,
+            inputLayerOptions: car.inputLayerOptions,
+        };
+    }
+    static deserialiseCarData(data) {
+        const car = new Car(undefined, undefined, data.probeAngles);
+        car.lapCount = data.lapCount;
+        car.score = data.score;
+        car.network = data.network;
+        car.inputLayerOptions = data.inputLayerOptions;
+        return car;
+    }
 }
-function shouldDiscardEvent(target) {
-    return target instanceof HTMLInputElement
-        || target instanceof HTMLTextAreaElement
-        || target instanceof HTMLButtonElement
-        || target instanceof HTMLSelectElement;
-}
-document.addEventListener('DOMContentLoaded', () => { redrawHint(NaN, NaN); });
-function redrawHint(x, y) {
-    hintCtx.clearRect(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT);
-    drawCircle(hintCtx, TRACK_START_X, TRACK_START_Y, 5, '#ff0000'); // Track start
-    drawCircle(hintCtx, TRACK_START_X, TRACK_START_Y, 5, '#000000', true); // Track start
-    drawCircle(hintCtx, STADIUM_WIDTH / 2, STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
-    drawCircle(hintCtx, x, y, TRACK_WIDTH / 2, '#ffffff', true); // Cursor
-}
-//#endregion
-//#region Cars
-/* ---------------------------------- Cars ---------------------------------- */
-const CAR_WIDTH = 20;
-const CAR_HEIGHT = 10;
 class Probe {
     constructor(angle) {
         this.distance = Infinity;
@@ -177,7 +291,7 @@ class Probe {
     }
 }
 class Car {
-    constructor(x = TRACK_START_X, y = TRACK_START_Y, probeAngles = []) {
+    constructor(x = Stadium.TRACK_START_X, y = Stadium.TRACK_START_Y, probeAngles = []) {
         this.angle = 0;
         this.speed = 0;
         this.originAngle = 0;
@@ -198,8 +312,8 @@ class Car {
         this.colour = getRandomColour();
     }
     reset() {
-        this.x = TRACK_START_X;
-        this.y = TRACK_START_Y;
+        this.x = Stadium.TRACK_START_X;
+        this.y = Stadium.TRACK_START_Y;
         this.angle = 0;
         this.speed = 0;
         this.originAngle = 0;
@@ -214,7 +328,7 @@ class Car {
     move() {
         this.engineInput = clamp(this.engineInput, -1, 1);
         this.steerInput = clamp(this.steerInput, -1, 1);
-        this.isOnTrack = isOnTrack({ x: this.x, y: this.y });
+        this.isOnTrack = Stadium.isOnTrack({ x: this.x, y: this.y });
         if (this.engineInput > 0) {
             this.speed += 0.01 * this.engineInput; // Accelerate
         }
@@ -235,11 +349,11 @@ class Car {
         this.angle += turnSpeed * this.steerInput; // Steer
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed;
-        this.originAngle = Math.atan2(this.y - STADIUM_HEIGHT / 2, this.x - STADIUM_WIDTH / 2);
+        this.originAngle = Math.atan2(this.y - Stadium.STADIUM_HEIGHT / 2, this.x - Stadium.STADIUM_WIDTH / 2);
     }
     updateProbes() {
         this.probes.forEach(probe => {
-            probe.distance = raycastDistance(this, probe.angle);
+            probe.distance = Stadium.raycastDistance(this, probe.angle);
         });
     }
     clone() {
@@ -248,148 +362,6 @@ class Car {
         return newCar;
     }
 }
-function serialiseCarData(car) {
-    const probeAngles = car.probes.map(probe => probe.angle);
-    return {
-        colour: car.colour,
-        probeAngles: probeAngles,
-        lapCount: car.lapCount,
-        score: car.score,
-        network: car.network,
-        inputLayerOptions: car.inputLayerOptions,
-    };
-}
-function deserialiseCarData(data) {
-    const car = new Car(undefined, undefined, data.probeAngles);
-    car.lapCount = data.lapCount;
-    car.score = data.score;
-    car.network = data.network;
-    car.inputLayerOptions = data.inputLayerOptions;
-    return car;
-}
-let throttleButtonPressed = false;
-let brakeButtonPressed = false;
-let leftButtonPressed = false;
-let rightButtonPressed = false;
-document.addEventListener('keydown', handleKeyEvent);
-document.addEventListener('keyup', handleKeyEvent);
-function handleKeyEvent(event) {
-    const isPressed = event.type === 'keydown';
-    switch (event.key) {
-        case 'ArrowUp':
-            throttleButtonPressed = isPressed;
-            break;
-        case 'ArrowDown':
-            brakeButtonPressed = isPressed;
-            break;
-        case 'ArrowLeft':
-            leftButtonPressed = isPressed;
-            break;
-        case 'ArrowRight':
-            rightButtonPressed = isPressed;
-            break;
-    }
-}
-function tickDo() {
-    updateTickCounter();
-    processCars();
-    drawCars();
-    cars.forEach(updateRoadScore);
-}
-function processCars() {
-    cars.forEach(car => {
-        car.engineInput = +throttleButtonPressed - +brakeButtonPressed;
-        car.steerInput = +rightButtonPressed - +leftButtonPressed;
-        car.updateProbes();
-        [car.engineInput, car.steerInput] = car.network.predict(NeuralNetwork.getInputLayerValues(car));
-        car.move();
-    });
-}
-function spawnCar(x, y) {
-    if (x < 0 || x >= STADIUM_WIDTH || y < 0 || y >= STADIUM_HEIGHT) {
-        console.warn('Spawn coordinates out of bounds');
-        return;
-    }
-    const car = new Car(x, y, Garage.probeAngles);
-    cars.push(car);
-    drawCars();
-}
-function drawCars() {
-    carCtx.clearRect(0, 0, STADIUM_WIDTH, STADIUM_HEIGHT);
-    carCtx.save();
-    cars.forEach(car => {
-        carCtx.translate(car.x, car.y);
-        carCtx.rotate(car.angle);
-        car.probes.forEach(probe => {
-            const probeLength = probe.distance;
-            const probeX = Math.cos(probe.angle) * probeLength;
-            const probeY = Math.sin(probe.angle) * probeLength;
-            carCtx.strokeStyle = `${car.colour}60`;
-            carCtx.lineWidth = 2;
-            carCtx.beginPath();
-            carCtx.moveTo(0, 0);
-            carCtx.lineTo(probeX, probeY);
-            carCtx.stroke();
-        });
-        drawRectangle(carCtx, -CAR_WIDTH / 2, -CAR_HEIGHT / 2, CAR_WIDTH, CAR_HEIGHT, car.colour);
-        drawRectangle(carCtx, -CAR_WIDTH / 2, -5, CAR_WIDTH, CAR_HEIGHT, '#000000', true);
-        carCtx.resetTransform();
-    });
-    carCtx.restore();
-}
-function raycastDistance(car, angle) {
-    const rayOrigin = { x: car.x, y: car.y };
-    const cosAngle = Math.cos(car.angle + angle);
-    const sinAngle = Math.sin(car.angle + angle);
-    const maxDistance = 200;
-    const stepSize = 10;
-    for (let distance = 0; distance < maxDistance; distance += stepSize) {
-        const rayEnd = {
-            x: rayOrigin.x + cosAngle * distance,
-            y: rayOrigin.y + sinAngle * distance
-        };
-        if (!isOnTrack(rayEnd)) {
-            return distance;
-        }
-    }
-    return maxDistance;
-}
-function isOnTrack(point) {
-    if (point.x < 0 || point.x >= STADIUM_WIDTH || point.y < 0 || point.y >= STADIUM_HEIGHT) {
-        return false; // Out of bounds
-    }
-    const x = Math.floor(point.x);
-    const y = Math.floor(point.y);
-    const index = (y * STADIUM_WIDTH + x) * 4;
-    return trackData[index + 3] !== 0; // Check alpha channel
-}
-function updateRoadScore(car) {
-    car.score += car.isOnTrack ? 0.2 : -5;
-    if (car.isOnTrack) {
-        car.score += interpolate(car.speed, [-1, 0, 1, 5], [-3, -2, 1, 4]);
-    }
-    if (car.previousOriginAngle) {
-        let deltaAngle = car.originAngle - car.previousOriginAngle;
-        if (deltaAngle < -Math.PI) {
-            deltaAngle += 2 * Math.PI;
-        }
-        else if (deltaAngle > Math.PI) {
-            deltaAngle -= 2 * Math.PI;
-        }
-        car.lapCount += deltaAngle / (2 * Math.PI);
-    }
-    car.previousOriginAngle = car.originAngle;
-    car.grassTicks -= +car.isOnTrack;
-    car.speedSum += car.speed;
-    // console.log(`Car at (${car.x.toFixed(2)}, ${car.y.toFixed(2)}) - Speed: ${car.speed.toFixed(2)}, Score: ${car.score.toFixed(2)}, Lap Count: ${car.lapCount.toFixed(2)}`);
-}
-function getPerformanceScore(car, atTick) {
-    let score = 0;
-    score += car.lapCount * ((atTick - car.grassTicks) / atTick) ** 2 * 100;
-    score += interpolate(car.speedSum / atTick, [0, 1], [-100, 100]);
-    return score;
-}
-//#endregion
 /* -------------------------------------------------------------------------- */
 class Garage {
     static onProbeAnglesInput() {
@@ -405,8 +377,8 @@ class Garage {
         this.garageCtx.translate(this.garageCanvas.width / 2, this.garageCanvas.height / 2);
         this.garageCtx.rotate(-Math.PI / 2);
         const CAR_SCALE = 2;
-        const scaledCarWidth = CAR_WIDTH * CAR_SCALE;
-        const scaledCarHeight = CAR_HEIGHT * CAR_SCALE;
+        const scaledCarWidth = Stadium.CAR_WIDTH * CAR_SCALE;
+        const scaledCarHeight = Stadium.CAR_HEIGHT * CAR_SCALE;
         drawRectangle(this.garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, this.GARAGE_CAR_COLOUR);
         this.probeAngles.forEach(angle => {
             drawLine(this.garageCtx, 0, 0, Math.cos(angle) * 100, Math.sin(angle) * 100, 2, this.GARAGE_CAR_COLOUR);
@@ -449,10 +421,10 @@ class Garage {
         document.addEventListener('DOMContentLoaded', () => { this.onProbeAnglesInput(); });
     }
 }
-_a = Garage;
+_b = Garage;
 /* ----------------------------------- UI ----------------------------------- */
 Garage.garageCanvas = document.getElementById('garageCanvas');
-Garage.garageCtx = _a.garageCanvas.getContext('2d');
+Garage.garageCtx = _b.garageCanvas.getContext('2d');
 Garage.GARAGE_CAR_COLOUR = '#ffa0a0';
 Garage.probeAnglesInput = document.getElementById('probeAngles');
 Garage.probeAngles = [];
@@ -499,17 +471,16 @@ class NeuralNetwork {
             ...this.options.probeDistances.value ? car.probes.map(probe => probe.distance) : [],
             this.options.carSpeed.value ? car.speed : NaN,
             this.options.carAngle.value ? car.angle : NaN,
-            ...this.options.carPosition.value ? [car.x - STADIUM_WIDTH / 2, car.y - STADIUM_HEIGHT / 2] : [],
+            ...this.options.carPosition.value ? [car.x - Stadium.STADIUM_WIDTH / 2, car.y - Stadium.STADIUM_HEIGHT / 2] : [],
             this.options.trackAngle.value ? car.originAngle : NaN,
             this.options.lapCount.value ? car.lapCount : NaN,
             this.options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
             this.options.roadScore.value ? car.score : NaN,
-            this.options.performanceScore.value ? getPerformanceScore(car, Looper.tickCount) : NaN,
+            this.options.performanceScore.value ? Stadium.getPerformanceScore(car, Looper.tickCount) : NaN,
             this.options.tickNumber.value ? Looper.tickCount : NaN
         ].filter(value => !isNaN(value));
         return inputLayerValues;
     }
-    /* ----------------------------------- UI ----------------------------------- */
     static serialiseInputLayerOptions() {
         return {
             probeDistances: this.options.probeDistances.value,
@@ -525,21 +496,21 @@ class NeuralNetwork {
         };
     }
     static redraw() {
-        neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
+        this.neuralNetworkCtx.clearRect(0, 0, this.neuralNetworkCanvas.width, this.neuralNetworkCanvas.height);
         // calculate node positions
         const layerSizes = [this.getInputLayerSize(), ...this.hiddenLayerSizes, 2];
         const layerCount = layerSizes.length;
         const maxLayerSize = Math.max(...layerSizes);
-        const nodeRadius = Math.min(neuralNetworkCanvas.height / maxLayerSize / 2 - 2, neuralNetworkCanvas.width / layerCount / 2 - 3);
-        const nodeHeight = neuralNetworkCanvas.height / maxLayerSize;
-        const layerWidth = (neuralNetworkCanvas.width - nodeRadius * 2) / (layerCount - 1);
+        const nodeRadius = Math.min(this.neuralNetworkCanvas.height / maxLayerSize / 2 - 2, this.neuralNetworkCanvas.width / layerCount / 2 - 3);
+        const nodeHeight = this.neuralNetworkCanvas.height / maxLayerSize;
+        const layerWidth = (this.neuralNetworkCanvas.width - nodeRadius * 2) / (layerCount - 1);
         const nodePositions = [];
         for (let i = 0; i < layerCount; i++) {
             const layerSize = layerSizes[i];
             const layerX = nodeRadius + i * layerWidth;
             nodePositions[i] = [];
             const totalNodesHeight = layerSize * nodeHeight;
-            const verticalOffset = (neuralNetworkCanvas.height - totalNodesHeight) / 2;
+            const verticalOffset = (this.neuralNetworkCanvas.height - totalNodesHeight) / 2;
             for (let j = 0; j < layerSize; j++) {
                 const nodeY = verticalOffset + j * nodeHeight + nodeHeight / 2;
                 nodePositions[i].push({ x: layerX, y: nodeY });
@@ -555,7 +526,7 @@ class NeuralNetwork {
                 const { x: x1, y: y1 } = nodePositions[i][j];
                 for (let k = 0; k < nextLayerSize; k++) {
                     const { x: x2, y: y2 } = nodePositions[i + 1][k];
-                    drawLine(neuralNetworkCtx, x1, y1, x2, y2, 1, '#ffffff40');
+                    drawLine(this.neuralNetworkCtx, x1, y1, x2, y2, 1, '#ffffff40');
                 }
             }
         });
@@ -565,14 +536,14 @@ class NeuralNetwork {
             for (let j = 0; j < layerSize; j++) {
                 const { x, y } = nodePositions[i][j];
                 if (i === 0 || i === layerCount - 1) {
-                    const colour = i === 0 ? Garage.GARAGE_CAR_COLOUR : TRACK_COLOUR;
-                    drawCircle(neuralNetworkCtx, x, y, nodeRadius, colour);
+                    const colour = i === 0 ? Garage.GARAGE_CAR_COLOUR : Stadium.TRACK_COLOUR;
+                    drawCircle(this.neuralNetworkCtx, x, y, nodeRadius, colour);
                 }
                 else {
-                    neuralNetworkCtx.globalCompositeOperation = 'destination-out';
-                    drawCircle(neuralNetworkCtx, x, y, nodeRadius, '#ffffff');
-                    neuralNetworkCtx.globalCompositeOperation = 'source-over'; // Reset to default
-                    drawCircle(neuralNetworkCtx, x, y, nodeRadius, '#ffffff', true);
+                    this.neuralNetworkCtx.globalCompositeOperation = 'destination-out';
+                    drawCircle(this.neuralNetworkCtx, x, y, nodeRadius, '#ffffff');
+                    this.neuralNetworkCtx.globalCompositeOperation = 'source-over'; // Reset to default
+                    drawCircle(this.neuralNetworkCtx, x, y, nodeRadius, '#ffffff', true);
                 }
             }
         }
@@ -581,19 +552,22 @@ class NeuralNetwork {
         if (this.options.probeDistances.value) {
             for (let i = 0; i < Garage.probeAngles.length; i++) {
                 const { x, y } = nodePositions[0][i];
-                drawText(neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
+                drawText(this.neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
             }
         }
-        drawText(neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
-        drawText(neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        drawText(this.neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        drawText(this.neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
         // update layer container
-        inputLayerElement.innerHTML = layerSizes[0].toString();
-        outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
-        inputLayerElement.parentElement.style.marginLeft = `${nodeRadius}px`;
-        outputLayerElement.parentElement.style.marginRight = `${nodeRadius}px`;
+        this.inputLayerElement.innerHTML = layerSizes[0].toString();
+        this.outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
+        this.inputLayerElement.parentElement.style.marginLeft = `${nodeRadius}px`;
+        this.outputLayerElement.parentElement.style.marginRight = `${nodeRadius}px`;
     }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
+        this.neuralNetworkCanvas.width = 350;
+        this.neuralNetworkCanvas.height = 220;
+        lockableElements.push(this.hiddenLayerInput);
         document.addEventListener('DOMContentLoaded', () => {
             Object.keys(this.options).forEach((key) => {
                 const typedKey = key;
@@ -609,17 +583,17 @@ class NeuralNetwork {
                         return;
                     }
                     inputOption.value = inputOption.element.checked;
-                    NeuralNetwork.redraw();
+                    _c.redraw();
                 }
             });
         });
         document.addEventListener('DOMContentLoaded', () => { this.redraw(); });
-        hiddenLayerInput.addEventListener('input', () => {
+        this.hiddenLayerInput.addEventListener('input', () => {
             if (areInputsLocked) {
                 return;
             }
-            hiddenLayerInput.value = hiddenLayerInput.value.replace(/[^0-9 ]/g, '');
-            const input = hiddenLayerInput.value.trim();
+            this.hiddenLayerInput.value = this.hiddenLayerInput.value.replace(/[^0-9 ]/g, '');
+            const input = this.hiddenLayerInput.value.trim();
             const newHiddenLayerSizes = input.split(' ').map(size => parseInt(size.trim(), 10)).filter(size => !isNaN(size) && size > 0);
             if (newHiddenLayerSizes.some(size => size > 50)) {
                 alert('Hidden layer sizes must be between 1 and 50.');
@@ -630,9 +604,16 @@ class NeuralNetwork {
         });
     }
 }
+_c = NeuralNetwork;
 /* ---------------------------------- Logic --------------------------------- */
 NeuralNetwork.activationFunction = (x) => Math.tanh(x);
 NeuralNetwork.hiddenLayerSizes = [];
+/* ----------------------------------- UI ----------------------------------- */
+NeuralNetwork.neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas');
+NeuralNetwork.neuralNetworkCtx = _c.neuralNetworkCanvas.getContext('2d');
+NeuralNetwork.inputLayerElement = document.getElementById('inputLayer');
+NeuralNetwork.outputLayerElement = document.getElementById('outputLayer');
+NeuralNetwork.hiddenLayerInput = document.getElementById('hiddenLayers');
 NeuralNetwork.options = {
     probeDistances: { element: document.getElementById('probeDistances') },
     carSpeed: { element: document.getElementById('carSpeed') },
@@ -730,7 +711,7 @@ class NaturalSelection {
     }
     static generationEnd() {
         cars.forEach((car) => {
-            car.score += getPerformanceScore(car, Looper.tickCount);
+            car.score += Stadium.getPerformanceScore(car, Looper.tickCount);
         });
         const sortedCars = cars.sort((a, b) => b.score - a.score);
         // Elimination
@@ -998,7 +979,7 @@ class Looper {
         console.log(`---------- Starting Tick Loop for Generation ${this.generationCount} ----------`);
         while (this.tickCount < NaturalSelection.options.tickLimit.value) {
             this.tickCount++;
-            tickDo();
+            Stadium.tickDo();
             yield;
         }
     }
