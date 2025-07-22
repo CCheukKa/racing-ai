@@ -8,12 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 //! main
-const startButton = document.getElementById('startButton');
-startButton.addEventListener('click', () => {
-    const successful = startNaturalSelection();
-    lockInputs(successful);
+const tickLoopButton = document.getElementById('tickLoopButton');
+tickLoopButton.addEventListener('click', () => {
+    const firstRun = generationLooper === null;
+    if (firstRun) {
+        const successful = createInitialBatch();
+        if (!successful) {
+            return;
+        }
+        generationLoopButton.disabled = false;
+        lockInputs(true);
+    }
+    tickLoopPaused = !tickLoopPaused;
+    tickLoopButton.textContent = tickLoopPaused ? 'Resume' : 'Pause';
+    if (firstRun) {
+        generationLooper = generationLoop();
+        runLoop(generationLooper);
+    }
 });
-const tickCounter = document.getElementById('tickCounter');
+const generationLoopButton = document.getElementById('generationLoopButton');
+generationLoopButton.addEventListener('click', () => {
+    if (!generationLoopStopped) {
+        generationLoopStopped = true;
+        generationLoopButton.disabled = true;
+    }
+});
 const stadiumContainer = document.getElementById('stadiumContainer');
 const STADIUM_WIDTH = stadiumContainer.clientWidth;
 const STADIUM_HEIGHT = stadiumContainer.clientHeight;
@@ -49,7 +68,7 @@ const inputLayerElement = document.getElementById('inputLayer');
 const outputLayerElement = document.getElementById('outputLayer');
 const hiddenLayerInput = document.getElementById('hiddenLayers');
 //! lock inputs
-const lockableElements = [startButton, probeAnglesInput, hiddenLayerInput];
+const lockableElements = [probeAnglesInput, hiddenLayerInput];
 function lockInputs(lock) {
     if (areInputsLocked === lock) {
         return;
@@ -281,23 +300,11 @@ function handleKeyEvent(event) {
             break;
     }
 }
-let tickCount = 0;
-function tickGame() {
-    // console.log(`Tick: ${tickCount}`);
-    tickCounter.textContent = `Tick: ${tickCount}`;
+function tickDo() {
+    updateTickCounter();
     processCars();
-    cars.forEach(updateRoadScore);
     drawCars();
-    if (++tickCount >= naturalSelectionInputOptions.tickLimit.value) {
-        cars.forEach((car) => {
-            car.score += getPerformanceScore(car, tickCount);
-        });
-        endGeneration();
-        tickCount = 0;
-    }
-    else {
-        requestAnimationFrame(tickGame);
-    }
+    cars.forEach(updateRoadScore);
 }
 function processCars() {
     cars.forEach(car => {
@@ -682,20 +689,15 @@ hiddenLayerInput.addEventListener('input', () => {
 //#region Natural Selection
 /* ---------------------------- Natural Selection --------------------------- */
 let cars = [];
-function startNaturalSelection() {
+function createInitialBatch() {
     if (probeAngles === null) {
         return false;
     }
     cars = Array.from({ length: naturalSelectionInputOptions.populationSize.value }, () => new Car(undefined, undefined, probeAngles));
-    setTimeout(startGeneration, 0);
     return true;
 }
-let generationCount = 0;
-function startGeneration() {
-    generationCount++;
-    console.log(`---------- Starting Generation ${generationCount} with ${cars.length} cars ----------`);
+function generationStart() {
     cars.forEach(car => car.reset());
-    requestAnimationFrame(tickGame);
     naturalSelectionLog.push({
         generation: generationCount,
         populationSize: naturalSelectionInputOptions.populationSize.value,
@@ -704,9 +706,13 @@ function startGeneration() {
     });
     updateNaturalSelectionLog();
 }
-function endGeneration() {
-    const survivedCars = [];
+function generationEnd() {
+    cars.forEach((car) => {
+        car.score += getPerformanceScore(car, tickCount);
+    });
     const sortedCars = cars.sort((a, b) => b.score - a.score);
+    // Elimination
+    const survivedCars = [];
     sortedCars.forEach((car, index) => {
         car.rank = index + 1;
         const willSurvive = Math.random() < survivalProbability(car.rank);
@@ -717,6 +723,16 @@ function endGeneration() {
     });
     console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / naturalSelectionInputOptions.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
     console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
+    naturalSelectionLog[naturalSelectionLog.length - 1] = {
+        generation: generationCount,
+        populationSize: naturalSelectionInputOptions.populationSize.value,
+        survivors: survivedCars.length,
+        bestScore: sortedCars[0].score
+    };
+    updateNaturalSelectionLog();
+    return survivedCars;
+}
+function generationPostEnd(survivedCars) {
     const newCars = [];
     while (survivedCars.length + newCars.length < naturalSelectionInputOptions.populationSize.value) {
         for (const car of survivedCars) {
@@ -734,15 +750,6 @@ function endGeneration() {
         survivedCars.forEach(car => car.network.mutate());
     }
     cars = [...survivedCars, ...newCars];
-    requestAnimationFrame(startGeneration);
-    naturalSelectionLog[naturalSelectionLog.length - 1] = {
-        generation: generationCount,
-        populationSize: naturalSelectionInputOptions.populationSize.value,
-        survivors: survivedCars.length,
-        bestScore: sortedCars[0].score
-    };
-    updateNaturalSelectionLog();
-    console.log(`---------- End of Generation ${generationCount} ----------`);
 }
 function survivalProbability(rank) {
     return Math.exp(-(rank - 1) / naturalSelectionInputOptions.populationSize.value * naturalSelectionInputOptions.survivalHarshness.value);
@@ -799,6 +806,12 @@ function updateNaturalSelectionLog() {
         naturalSelectionLogElement.scrollTop = naturalSelectionLogElement.scrollHeight;
     }
 }
+const tickCounter = document.getElementById('tickCounter');
+function updateTickCounter() {
+    tickCounter.textContent = `Tick: ${tickCount}/${naturalSelectionInputOptions.tickLimit.value}`;
+    tickCounter.style.setProperty('--progress', `${(tickCount / naturalSelectionInputOptions.tickLimit.value) * 100}%`);
+}
+document.addEventListener('DOMContentLoaded', updateTickCounter);
 //#endregion
 //#region Graphics
 /* -------------------------------- Graphics -------------------------------- */
@@ -906,5 +919,65 @@ function interpolate(value, inPoints, outPoints) {
         }
     }
     return output;
+}
+//#endregion
+//#region Loop Logic
+/* ------------------------------- Loop Logic ------------------------------- */
+let tickLoopPaused = true;
+let generationLoopStopped = false;
+let generationLooper = null;
+function runLoop(looper) {
+    function step() {
+        const res = looper.next();
+        if (!res.done) {
+            requestAnimationFrame(step); // Non-blocking
+        }
+    }
+    step();
+}
+let generationCount = 0;
+function* generationLoop() {
+    while (true) {
+        generationCount++;
+        console.log(`---------- Starting Generation ${generationCount} with ${cars.length} cars ----------`);
+        generationStart();
+        let tickLooper = tickLoop();
+        let tickResult = tickLooper.next();
+        while (!tickResult.done) {
+            // Pause sub loop if requested
+            if (tickLoopPaused) {
+                console.log(`---------- Pausing Generation ${generationCount} at tick ${tickCount}----------`);
+                while (tickLoopPaused) {
+                    yield;
+                }
+            }
+            tickResult = tickLooper.next();
+            yield;
+        }
+        const survivedCars = generationEnd();
+        if (generationLoopStopped) {
+            console.log(`Generation loop stopped at generation ${generationCount}`);
+            tickLoopPaused = true;
+            tickLoopButton.textContent = 'Resume';
+            // Wait until resumed
+            while (tickLoopPaused) {
+                yield;
+            }
+            generationLoopStopped = false;
+            generationLoopButton.disabled = false;
+            console.log(`Resuming generation loop at generation ${generationCount}`);
+        }
+        generationPostEnd(survivedCars);
+    }
+}
+let tickCount = 0;
+function* tickLoop() {
+    tickCount = 0;
+    console.log(`---------- Starting Tick Loop for Generation ${generationCount} ----------`);
+    while (tickCount < naturalSelectionInputOptions.tickLimit.value) {
+        tickCount++;
+        tickDo();
+        yield;
+    }
 }
 //#endregion

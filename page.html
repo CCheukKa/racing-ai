@@ -142,7 +142,7 @@
                 </div>
                 <div class="option">
                     <label for="reproductionHarshness"
-                        title="Higher values mean lower-ranked cars are less likely to reproduce (0 = always reproduce)">
+                        title="Higher values mean lower-ranked cars are less likely to reproduce (0 = always reproduce), which decreases diversity">
                         Reproduction Harshness
                     </label>
                     <input required type="number" id="reproductionHarshness" placeholder="1" value="1" min="0"
@@ -181,8 +181,11 @@
                     </template>
                 </div>
             </div>
-            <button id="startButton">Start</button>
-            <span id="tickCounter"></span>
+            <div class="bottom">
+                <button id="tickLoopButton">Start</button>
+                <button id="generationLoopButton" disabled>Stop after this</button>
+                <div id="tickCounter"></div>
+            </div>
         </div>
         <div class="leaderboardContainer outline">
             <div class="whatText">Leaderboard</div>

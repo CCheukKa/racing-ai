@@ -409,6 +409,38 @@ body {
                 }
             }
         }
+
+        .bottom {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+
+            #tickCounter {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-grow: 1;
+                height: 100%;
+                background-color: #ffffff20;
+                position: relative;
+                overflow: hidden;
+                border-radius: 5px;
+                font-weight: normal;
+
+                &::after {
+                    background-color: #00aa0080;
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: calc(var(--progress) - 100%);
+                    z-index: -1;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+        }
     }
 
     &>.leaderboardContainer {
