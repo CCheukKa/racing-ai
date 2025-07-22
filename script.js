@@ -19,19 +19,13 @@ function lockInputs(lock) {
         element.disabled = lock;
     });
 }
-const tickCounter = document.getElementById('tickCounter');
-function updateTickCounter() {
-    tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
-    tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
-}
-document.addEventListener('DOMContentLoaded', updateTickCounter);
 let cars = [];
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
 class Stadium {
     static tickDo() {
-        updateTickCounter();
+        NaturalSelection.updateTickCounter();
         this.processCars();
         this.drawCars();
         cars.forEach(this.updateRoadScore);
@@ -791,6 +785,10 @@ class NaturalSelection {
             this.naturalSelectionLogElement.scrollTop = this.naturalSelectionLogElement.scrollHeight;
         }
     }
+    static updateTickCounter() {
+        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
+        this.tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
+    }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
         document.addEventListener('DOMContentLoaded', () => {
@@ -812,12 +810,15 @@ class NaturalSelection {
                     else if (typeof inputOption.value === "boolean") {
                         inputOption.value = inputOption.element.checked;
                     }
+                    NaturalSelection.updateTickCounter();
                 }
             });
+            this.updateTickCounter();
         });
     }
 }
 /* ----------------------------------- UI ----------------------------------- */
+NaturalSelection.tickCounter = document.getElementById('tickCounter');
 NaturalSelection.options = {
     tickLimit: { element: document.getElementById('tickLimit'), value: NaN },
     populationSize: { element: document.getElementById('populationSize'), value: NaN },

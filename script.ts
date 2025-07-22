@@ -15,13 +15,6 @@ function lockInputs(lock: boolean) {
     });
 }
 
-const tickCounter = document.getElementById('tickCounter') as HTMLDivElement;
-function updateTickCounter() {
-    tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
-    tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
-}
-document.addEventListener('DOMContentLoaded', updateTickCounter);
-
 let cars: Car[] = [];
 
 /* -------------------------------------------------------------------------- */
@@ -35,7 +28,7 @@ class Stadium {
     public static readonly CAR_HEIGHT = 10;
 
     public static tickDo() {
-        updateTickCounter();
+        NaturalSelection.updateTickCounter();
         this.processCars();
         this.drawCars();
         cars.forEach(this.updateRoadScore);
@@ -891,6 +884,8 @@ class NaturalSelection {
 
     /* ----------------------------------- UI ----------------------------------- */
 
+    private static tickCounter = document.getElementById('tickCounter') as HTMLDivElement;
+
     public static options: NaturalSelectionInputOptions = {
         tickLimit: { element: document.getElementById('tickLimit') as HTMLInputElement, value: NaN },
         populationSize: { element: document.getElementById('populationSize') as HTMLInputElement, value: NaN },
@@ -920,6 +915,11 @@ class NaturalSelection {
         if (shouldAutoScroll) { this.naturalSelectionLogElement.scrollTop = this.naturalSelectionLogElement.scrollHeight; }
     }
 
+    public static updateTickCounter() {
+        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
+        this.tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
+    }
+
     /* ---------------------------------- Code ---------------------------------- */
 
     public static init() {
@@ -939,8 +939,10 @@ class NaturalSelection {
                     } else if (typeof inputOption.value === "boolean") {
                         inputOption.value = inputOption.element.checked;
                     }
+                    NaturalSelection.updateTickCounter();
                 }
             });
+            this.updateTickCounter();
         });
     }
 }
