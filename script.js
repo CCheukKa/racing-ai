@@ -1,4 +1,5 @@
 "use strict";
+var _a;
 let areInputsLocked = false;
 document.addEventListener('DOMContentLoaded', () => {
     Array.from(document.getElementsByClassName('whatText')).forEach(e => {
@@ -27,12 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     hintCanvas.width = STADIUM_WIDTH;
     hintCanvas.height = STADIUM_HEIGHT;
 });
-//! garage
-const garageCanvas = document.getElementById('garageCanvas');
-const garageCtx = garageCanvas.getContext('2d');
-garageCanvas.width = 300;
-garageCanvas.height = 300;
-const probeAnglesInput = document.getElementById('probeAngles');
 //! neural network
 const neuralNetworkCanvas = document.getElementById('neuralNetworkCanvas');
 const neuralNetworkCtx = neuralNetworkCanvas.getContext('2d');
@@ -43,7 +38,7 @@ const inputLayerElement = document.getElementById('inputLayer');
 const outputLayerElement = document.getElementById('outputLayer');
 const hiddenLayerInput = document.getElementById('hiddenLayers');
 //! lock inputs
-const lockableElements = [probeAnglesInput, hiddenLayerInput];
+const lockableElements = [hiddenLayerInput];
 function lockInputs(lock) {
     if (areInputsLocked === lock) {
         return;
@@ -315,7 +310,7 @@ function spawnCar(x, y) {
         console.warn('Spawn coordinates out of bounds');
         return;
     }
-    const car = new Car(x, y, probeAngles);
+    const car = new Car(x, y, Garage.probeAngles);
     cars.push(car);
     drawCars();
 }
@@ -395,68 +390,80 @@ function getPerformanceScore(car, atTick) {
     return score;
 }
 //#endregion
-//#region Garage UI
-/* -------------------------------- Garage UI ------------------------------- */
-const GARAGE_CAR_COLOUR = '#ffa0a0';
-let probeAngles = [];
-probeAnglesInput.addEventListener('input', () => {
-    if (areInputsLocked) {
-        return;
+/* -------------------------------------------------------------------------- */
+class Garage {
+    static onProbeAnglesInput() {
+        this.probeAngles = this.probeAnglesInput.value.trim().split('\n')
+            .map(angle => parseFloat(angle.trim()) * (Math.PI / 180))
+            .filter(angle => !isNaN(angle));
+        this.redrawGarage();
+        NeuralNetwork.redrawNeuralNetwork();
     }
-    probeAnglesInput.value = probeAnglesInput.value
-        .replace(/[^0-9-+.\n]/g, '')
-        .replace(/--/g, '+')
-        .replace(/\+-/g, '-')
-        .replace(/-\+/g, '-')
-        .replace(/\++/g, '+')
-        .replace(/\.+/g, '.')
-        .replace(/([+-])0+/gm, '$10')
-        .replace(/^0+/gm, '0')
-        .replace(/(?<=[0-9.])([\+-])/g, '\n$1');
-    onProbeAnglesInput();
-});
-probeAnglesInput.addEventListener('blur', () => {
-    if (areInputsLocked) {
-        return;
+    static redrawGarage() {
+        this.garageCtx.clearRect(0, 0, this.garageCanvas.width, this.garageCanvas.height);
+        this.garageCtx.save();
+        this.garageCtx.translate(this.garageCanvas.width / 2, this.garageCanvas.height / 2);
+        this.garageCtx.rotate(-Math.PI / 2);
+        const CAR_SCALE = 2;
+        const scaledCarWidth = CAR_WIDTH * CAR_SCALE;
+        const scaledCarHeight = CAR_HEIGHT * CAR_SCALE;
+        drawRectangle(this.garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, this.GARAGE_CAR_COLOUR);
+        this.probeAngles.forEach(angle => {
+            drawLine(this.garageCtx, 0, 0, Math.cos(angle) * 100, Math.sin(angle) * 100, 2, this.GARAGE_CAR_COLOUR);
+        });
+        drawRectangle(this.garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, '#000000', true);
+        this.garageCtx.restore();
     }
-    probeAnglesInput.value = probeAnglesInput.value
-        .replace(/([\+-])\./g, '$10.')
-        .replace(/^\./gm, '0.')
-        .replace(/\.$/gm, '');
-    onProbeAnglesInput();
-});
-document.addEventListener('DOMContentLoaded', onProbeAnglesInput);
-function onProbeAnglesInput() {
-    probeAngles = probeAnglesInput.value.trim().split('\n')
-        .map(angle => parseFloat(angle.trim()) * (Math.PI / 180))
-        .filter(angle => !isNaN(angle));
-    redrawGarage();
-    NeuralNetwork.redrawNeuralNetwork();
+    /* ---------------------------------- Code ---------------------------------- */
+    static init() {
+        this.garageCanvas.width = 300;
+        this.garageCanvas.height = 300;
+        lockableElements.push(this.probeAnglesInput);
+        document.addEventListener('DOMContentLoaded', () => { this.redrawGarage(); });
+        this.probeAnglesInput.addEventListener('input', () => {
+            if (areInputsLocked) {
+                return;
+            }
+            this.probeAnglesInput.value = this.probeAnglesInput.value
+                .replace(/[^0-9-+.\n]/g, '')
+                .replace(/--/g, '+')
+                .replace(/\+-/g, '-')
+                .replace(/-\+/g, '-')
+                .replace(/\++/g, '+')
+                .replace(/\.+/g, '.')
+                .replace(/([+-])0+/gm, '$10')
+                .replace(/^0+/gm, '0')
+                .replace(/(?<=[0-9.])([\+-])/g, '\n$1');
+            this.onProbeAnglesInput();
+        });
+        this.probeAnglesInput.addEventListener('blur', () => {
+            if (areInputsLocked) {
+                return;
+            }
+            this.probeAnglesInput.value = this.probeAnglesInput.value
+                .replace(/([\+-])\./g, '$10.')
+                .replace(/^\./gm, '0.')
+                .replace(/\.$/gm, '');
+            this.onProbeAnglesInput();
+        });
+        document.addEventListener('DOMContentLoaded', () => { this.onProbeAnglesInput(); });
+    }
 }
-document.addEventListener('DOMContentLoaded', redrawGarage);
-function redrawGarage() {
-    garageCtx.clearRect(0, 0, garageCanvas.width, garageCanvas.height);
-    garageCtx.save();
-    garageCtx.translate(garageCanvas.width / 2, garageCanvas.height / 2);
-    garageCtx.rotate(-Math.PI / 2);
-    const CAR_SCALE = 2;
-    const scaledCarWidth = CAR_WIDTH * CAR_SCALE;
-    const scaledCarHeight = CAR_HEIGHT * CAR_SCALE;
-    drawRectangle(garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, GARAGE_CAR_COLOUR);
-    probeAngles.forEach(angle => {
-        drawLine(garageCtx, 0, 0, Math.cos(angle) * 100, Math.sin(angle) * 100, 2, GARAGE_CAR_COLOUR);
-    });
-    drawRectangle(garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, '#000000', true);
-    garageCtx.restore();
-}
-//#endregion
+_a = Garage;
+/* ----------------------------------- UI ----------------------------------- */
+Garage.garageCanvas = document.getElementById('garageCanvas');
+Garage.garageCtx = _a.garageCanvas.getContext('2d');
+Garage.GARAGE_CAR_COLOUR = '#ffa0a0';
+Garage.probeAnglesInput = document.getElementById('probeAngles');
+Garage.probeAngles = [];
+Garage.init();
 let cars = [];
 /* -------------------------------------------------------------------------- */
 class NeuralNetwork {
     static getInputLayerSize() {
         let size = 0;
         if (this.options.probeDistances.value) {
-            size += probeAngles.length;
+            size += Garage.probeAngles.length;
         } // Probe distances
         if (this.options.carSpeed.value) {
             size++;
@@ -558,7 +565,7 @@ class NeuralNetwork {
             for (let j = 0; j < layerSize; j++) {
                 const { x, y } = nodePositions[i][j];
                 if (i === 0 || i === layerCount - 1) {
-                    const colour = i === 0 ? GARAGE_CAR_COLOUR : TRACK_COLOUR;
+                    const colour = i === 0 ? Garage.GARAGE_CAR_COLOUR : TRACK_COLOUR;
                     drawCircle(neuralNetworkCtx, x, y, nodeRadius, colour);
                 }
                 else {
@@ -572,7 +579,7 @@ class NeuralNetwork {
         // draw node labels
         const fontSize = nodeRadius * 1.6;
         if (this.options.probeDistances.value) {
-            for (let i = 0; i < probeAngles.length; i++) {
+            for (let i = 0; i < Garage.probeAngles.length; i++) {
                 const { x, y } = nodePositions[0][i];
                 drawText(neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
             }
@@ -705,10 +712,10 @@ NeuralNetwork.init();
 class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
     static createInitialBatch() {
-        if (probeAngles === null) {
+        if (Garage.probeAngles === null) {
             return false;
         }
-        cars = Array.from({ length: this.options.populationSize.value }, () => new Car(undefined, undefined, probeAngles));
+        cars = Array.from({ length: this.options.populationSize.value }, () => new Car(undefined, undefined, Garage.probeAngles));
         return true;
     }
     static generationStart() {
