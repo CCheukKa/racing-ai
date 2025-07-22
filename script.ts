@@ -478,12 +478,12 @@ class Garage {
         this.probeAngles = this.probeAnglesInput.value.trim().split('\n')
             .map(angle => parseFloat(angle.trim()) * (Math.PI / 180))
             .filter(angle => !isNaN(angle));
-        this.redrawGarage();
-        NeuralNetwork.redrawNeuralNetwork();
+        this.redraw();
+        NeuralNetwork.redraw();
     }
 
 
-    private static redrawGarage() {
+    private static redraw() {
         this.garageCtx.clearRect(0, 0, this.garageCanvas.width, this.garageCanvas.height);
 
         this.garageCtx.save();
@@ -512,7 +512,7 @@ class Garage {
 
         lockableElements.push(this.probeAnglesInput);
 
-        document.addEventListener('DOMContentLoaded', () => { this.redrawGarage() });
+        document.addEventListener('DOMContentLoaded', () => { this.redraw() });
         this.probeAnglesInput.addEventListener('input', () => {
             if (areInputsLocked) { return; }
             this.probeAnglesInput.value = this.probeAnglesInput.value
@@ -611,7 +611,7 @@ class NeuralNetwork {
         tickNumber: { element: document.getElementById('tickNumber') as HTMLInputElement },
     } as const;
 
-    public static redrawNeuralNetwork() {
+    public static redraw() {
         neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
 
         // calculate node positions
@@ -701,11 +701,11 @@ class NeuralNetwork {
                 function onInputChange() {
                     if (areInputsLocked) { return; }
                     inputOption.value = inputOption.element.checked;
-                    NeuralNetwork.redrawNeuralNetwork();
+                    NeuralNetwork.redraw();
                 }
             });
         });
-        document.addEventListener('DOMContentLoaded', () => { this.redrawNeuralNetwork() });
+        document.addEventListener('DOMContentLoaded', () => { this.redraw() });
         hiddenLayerInput.addEventListener('input', () => {
             if (areInputsLocked) { return; }
             hiddenLayerInput.value = hiddenLayerInput.value.replace(/[^0-9 ]/g, '');
@@ -716,7 +716,7 @@ class NeuralNetwork {
                 return;
             }
             this.hiddenLayerSizes = newHiddenLayerSizes;
-            this.redrawNeuralNetwork();
+            this.redraw();
         });
     }
 }
@@ -834,7 +834,7 @@ class NaturalSelection {
             survivors: undefined,
             bestScore: undefined
         })
-        this.updateNaturalSelectionLog();
+        this.updateLog();
     }
 
     public static generationEnd() {
@@ -862,7 +862,7 @@ class NaturalSelection {
             survivors: survivedCars.length,
             bestScore: sortedCars[0].score
         };
-        this.updateNaturalSelectionLog();
+        this.updateLog();
 
         return survivedCars;
     }
@@ -910,7 +910,7 @@ class NaturalSelection {
     private static naturalSelectionLogElement = document.getElementById('naturalSelectionLog') as HTMLDivElement;
     private static naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate') as HTMLTemplateElement;
     public static naturalSelectionLog: NaturalSelectionEntry[] = [];
-    public static updateNaturalSelectionLog() {
+    public static updateLog() {
         console.log('Updating Natural Selection Log');
         const shouldAutoScroll = this.naturalSelectionLogElement.scrollHeight - this.naturalSelectionLogElement.scrollTop <= this.naturalSelectionLogElement.clientHeight + 10;
 

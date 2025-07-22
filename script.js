@@ -396,10 +396,10 @@ class Garage {
         this.probeAngles = this.probeAnglesInput.value.trim().split('\n')
             .map(angle => parseFloat(angle.trim()) * (Math.PI / 180))
             .filter(angle => !isNaN(angle));
-        this.redrawGarage();
-        NeuralNetwork.redrawNeuralNetwork();
+        this.redraw();
+        NeuralNetwork.redraw();
     }
-    static redrawGarage() {
+    static redraw() {
         this.garageCtx.clearRect(0, 0, this.garageCanvas.width, this.garageCanvas.height);
         this.garageCtx.save();
         this.garageCtx.translate(this.garageCanvas.width / 2, this.garageCanvas.height / 2);
@@ -419,7 +419,7 @@ class Garage {
         this.garageCanvas.width = 300;
         this.garageCanvas.height = 300;
         lockableElements.push(this.probeAnglesInput);
-        document.addEventListener('DOMContentLoaded', () => { this.redrawGarage(); });
+        document.addEventListener('DOMContentLoaded', () => { this.redraw(); });
         this.probeAnglesInput.addEventListener('input', () => {
             if (areInputsLocked) {
                 return;
@@ -524,7 +524,7 @@ class NeuralNetwork {
             tickNumber: this.options.tickNumber.value,
         };
     }
-    static redrawNeuralNetwork() {
+    static redraw() {
         neuralNetworkCtx.clearRect(0, 0, neuralNetworkCanvas.width, neuralNetworkCanvas.height);
         // calculate node positions
         const layerSizes = [this.getInputLayerSize(), ...this.hiddenLayerSizes, 2];
@@ -609,11 +609,11 @@ class NeuralNetwork {
                         return;
                     }
                     inputOption.value = inputOption.element.checked;
-                    NeuralNetwork.redrawNeuralNetwork();
+                    NeuralNetwork.redraw();
                 }
             });
         });
-        document.addEventListener('DOMContentLoaded', () => { this.redrawNeuralNetwork(); });
+        document.addEventListener('DOMContentLoaded', () => { this.redraw(); });
         hiddenLayerInput.addEventListener('input', () => {
             if (areInputsLocked) {
                 return;
@@ -626,7 +626,7 @@ class NeuralNetwork {
                 return;
             }
             this.hiddenLayerSizes = newHiddenLayerSizes;
-            this.redrawNeuralNetwork();
+            this.redraw();
         });
     }
 }
@@ -726,7 +726,7 @@ class NaturalSelection {
             survivors: undefined,
             bestScore: undefined
         });
-        this.updateNaturalSelectionLog();
+        this.updateLog();
     }
     static generationEnd() {
         cars.forEach((car) => {
@@ -751,7 +751,7 @@ class NaturalSelection {
             survivors: survivedCars.length,
             bestScore: sortedCars[0].score
         };
-        this.updateNaturalSelectionLog();
+        this.updateLog();
         return survivedCars;
     }
     static generationPostEnd(survivedCars) {
@@ -779,7 +779,7 @@ class NaturalSelection {
     static reproductionProbability(rank) {
         return Math.exp(-(rank - 1) / this.options.populationSize.value * this.options.reproductionHarshness.value);
     }
-    static updateNaturalSelectionLog() {
+    static updateLog() {
         console.log('Updating Natural Selection Log');
         const shouldAutoScroll = this.naturalSelectionLogElement.scrollHeight - this.naturalSelectionLogElement.scrollTop <= this.naturalSelectionLogElement.clientHeight + 10;
         this.naturalSelectionLogElement.innerHTML = '';
