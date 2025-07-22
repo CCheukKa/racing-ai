@@ -189,6 +189,26 @@
         </div>
         <div class="leaderboardContainer outline">
             <div class="whatText">Leaderboard</div>
+            <div class="header">
+                <div>Rank</div>
+                <div>Gen</div>
+                <div>Score</div>
+                <div>Lap</div>
+                <div>Avg. Speed</div>
+                <div>On Track</div>
+            </div>
+            <div id="leaderboard" class="scroll">
+                <template id="leaderboardEntryTemplate">
+                    <div class="row">
+                        <div class="rank"></div>
+                        <div class="generation"></div>
+                        <div class="score"></div>
+                        <div class="lap"></div>
+                        <div class="avgSpeed"></div>
+                        <div class="onTrackPercentage"></div>
+                    </div>
+                </template>
+            </div>
         </div>
         <div class="tutorialContainer">
             <div id="whatButton">?</div>

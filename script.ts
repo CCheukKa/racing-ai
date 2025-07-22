@@ -158,7 +158,7 @@ class Stadium {
         }
         car.previousOriginAngle = car.originAngle;
 
-        car.grassTicks -= +car.isOnTrack;
+        car.grassTicks += +!car.isOnTrack;
         car.speedSum += car.speed;
 
         // console.log(`Car at (${car.x.toFixed(2)}, ${car.y.toFixed(2)}) - Speed: ${car.speed.toFixed(2)}, Score: ${car.score.toFixed(2)}, Lap Count: ${car.lapCount.toFixed(2)}`);
@@ -302,7 +302,7 @@ Stadium.init();
 /*                                    Cars                                    */
 /* -------------------------------------------------------------------------- */
 class Cars {
-    public static serialiseCarData(car: Car): SerialisedCarData {
+    public static serialiseCarData(car: Car, generation: number, ticksInGeneration: number): SerialisedCarData {
         const probeAngles = car.probes.map(probe => probe.angle);
         return {
             colour: car.colour,
@@ -311,6 +311,9 @@ class Cars {
             score: car.score,
             network: car.network,
             inputLayerOptions: car.inputLayerOptions,
+            generation: generation,
+            averageSpeed: car.speedSum / ticksInGeneration,
+            onTrackPercentage: car.grassTicks / ticksInGeneration,
         };
     }
     public static deserialiseCarData(data: SerialisedCarData): Car {
@@ -428,8 +431,11 @@ class Car {
 type SerialisedCarData = {
     colour: string;
     probeAngles: number[];
+    generation: number;
     lapCount: number;
     score: number;
+    averageSpeed: number;
+    onTrackPercentage: number;
     network: Network;
     inputLayerOptions: SerialisedInputLayerOptions;
 }
@@ -829,6 +835,8 @@ class NaturalSelection {
         });
         const sortedCars = cars.sort((a, b) => b.score - a.score);
 
+        LeaderBoard.leaderboard.push(...sortedCars.map(car => Cars.serialiseCarData(car, Looper.generationCount, Looper.tickCount)));
+
         // Elimination
         const survivedCars: Car[] = [];
         sortedCars.forEach((car, index) => {
@@ -849,6 +857,8 @@ class NaturalSelection {
             bestScore: sortedCars[0].score
         };
         this.updateLog();
+
+        LeaderBoard.update();
 
         return survivedCars;
     }
@@ -961,6 +971,36 @@ type NaturalSelectionEntry = {
     bestScore: number | undefined;
 }
 NaturalSelection.init();
+
+/* -------------------------------------------------------------------------- */
+/*                                 Leaderboard                                */
+/* -------------------------------------------------------------------------- */
+class LeaderBoard {
+    private static leaderboardElement = document.getElementById('leaderboard') as HTMLDivElement;
+    private static leaderboardEntryTemplate = document.getElementById('leaderboardEntryTemplate') as HTMLTemplateElement;
+
+    private static LEADERBOARD_MAX_ENTRIES = 20;
+
+    public static leaderboard: SerialisedCarData[] = [];
+    public static update() {
+        console.log('Updating Leaderboard');
+        this.leaderboard.sort((a, b) => b.score - a.score);
+        this.leaderboard = this.leaderboard.slice(0, this.LEADERBOARD_MAX_ENTRIES);
+
+        this.leaderboardElement.innerHTML = '';
+        this.leaderboard.forEach((carData, index) => {
+            const entryElement = this.leaderboardEntryTemplate.content.cloneNode(true) as HTMLDivElement;
+            entryElement.querySelector('.rank')!.textContent = (index + 1).toString();
+            entryElement.querySelector('.generation')!.textContent = carData.generation.toString();
+            // entryElement.querySelector('.colour')!.style.backgroundColor = car.colour;
+            entryElement.querySelector('.score')!.textContent = carData.score.toPrecision(4);
+            entryElement.querySelector('.lap')!.textContent = carData.lapCount.toFixed(2);
+            entryElement.querySelector('.avgSpeed')!.textContent = carData.averageSpeed.toFixed(6);
+            entryElement.querySelector('.onTrackPercentage')!.textContent = `${(carData.onTrackPercentage * 100).toFixed(2)}%`;
+            this.leaderboardElement.appendChild(entryElement);
+        });
+    }
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                   Looper                                   */
