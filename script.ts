@@ -14,7 +14,7 @@ tickLoopButton.addEventListener('click', () => {
     const firstRun = generationLooper === null;
 
     if (firstRun) {
-        const successful = createInitialBatch();
+        const successful = NaturalSelection.createInitialBatch();
         if (!successful) { return; }
 
         generationLoopButton.disabled = false;
@@ -612,8 +612,8 @@ class Network {
     mutate() {
         this.layers.forEach(layer => {
             layer.nodes.forEach(node => {
-                node.weights = node.weights.map(weight => weight + (Math.random() - 0.5) * naturalSelectionInputOptions.mutationRate.value);
-                node.bias += (Math.random() - 0.5) * naturalSelectionInputOptions.mutationRate.value;
+                node.weights = node.weights.map(weight => weight + (Math.random() - 0.5) * NaturalSelection.options.mutationRate.value);
+                node.bias += (Math.random() - 0.5) * NaturalSelection.options.mutationRate.value;
             });
         });
         return this;
@@ -833,86 +833,7 @@ hiddenLayerInput.addEventListener('input', () => {
 /* ---------------------------- Natural Selection --------------------------- */
 
 let cars: Car[] = [];
-function createInitialBatch() {
-    if (probeAngles === null) { return false; }
-    cars = Array.from({ length: naturalSelectionInputOptions.populationSize.value }, () => new Car(undefined, undefined, probeAngles));
-    return true;
-}
 
-function generationStart() {
-    cars.forEach(car => car.reset());
-    naturalSelectionLog.push({
-        generation: generationCount,
-        populationSize: naturalSelectionInputOptions.populationSize.value,
-        survivors: undefined,
-        bestScore: undefined
-    })
-    updateNaturalSelectionLog();
-}
-
-function generationEnd() {
-    cars.forEach((car) => {
-        car.score += getPerformanceScore(car, tickCount);
-    });
-    const sortedCars = cars.sort((a, b) => b.score - a.score);
-
-    // Elimination
-    const survivedCars: Car[] = [];
-    sortedCars.forEach((car, index) => {
-        car.rank = index + 1;
-        const willSurvive = Math.random() < survivalProbability(car.rank);
-
-        console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / naturalSelectionInputOptions.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
-        if (willSurvive) { survivedCars.push(car); }
-    });
-
-    console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / naturalSelectionInputOptions.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
-
-    console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
-
-    naturalSelectionLog[naturalSelectionLog.length - 1] = {
-        generation: generationCount,
-        populationSize: naturalSelectionInputOptions.populationSize.value,
-        survivors: survivedCars.length,
-        bestScore: sortedCars[0].score
-    };
-    updateNaturalSelectionLog();
-
-    return survivedCars;
-}
-
-function generationPostEnd(survivedCars: Car[]) {
-    const newCars: Car[] = [];
-    while (survivedCars.length + newCars.length < naturalSelectionInputOptions.populationSize.value) {
-        for (const car of survivedCars) {
-            if (Math.random() > reproductionProbability(car.rank)) { continue; }
-            console.log(`===== Reproducing: rank ${car.rank}, score ${car.score}, hash ${car.network.getHash()} =====`);
-
-            const newCar = car.clone();
-            newCar.network.mutate();
-            newCar.colour = randomNudgeColour(car.colour, 10);
-            newCars.push(newCar);
-        }
-    }
-
-    if (naturalSelectionInputOptions.parentShouldMutate.value) {
-        survivedCars.forEach(car => car.network.mutate());
-    }
-
-    cars = [...survivedCars, ...newCars];
-}
-
-function survivalProbability(rank: number): number {
-    return Math.exp(-(rank - 1) / naturalSelectionInputOptions.populationSize.value * naturalSelectionInputOptions.survivalHarshness.value);
-}
-
-function reproductionProbability(rank: number): number {
-    return Math.exp(-(rank - 1) / naturalSelectionInputOptions.populationSize.value * naturalSelectionInputOptions.reproductionHarshness.value);
-}
-//#endregion
-
-//#region Natural Selection UI
-/* -------------------------- Natural Selection UI -------------------------- */
 type NaturalSelectionInputOptions = {
     tickLimit: { element: HTMLInputElement, value: number },
     populationSize: { element: HTMLInputElement, value: number },
@@ -921,67 +842,152 @@ type NaturalSelectionInputOptions = {
     mutationRate: { element: HTMLInputElement, value: number },
     parentShouldMutate: { element: HTMLInputElement, value: boolean },
 };
-const naturalSelectionInputOptions: NaturalSelectionInputOptions = {
-    tickLimit: { element: document.getElementById('tickLimit') as HTMLInputElement, value: NaN },
-    populationSize: { element: document.getElementById('populationSize') as HTMLInputElement, value: NaN },
-    survivalHarshness: { element: document.getElementById('survivalHarshness') as HTMLInputElement, value: NaN },
-    reproductionHarshness: { element: document.getElementById('reproductionHarshness') as HTMLInputElement, value: NaN },
-    mutationRate: { element: document.getElementById('mutationRate') as HTMLInputElement, value: NaN },
-    parentShouldMutate: { element: document.getElementById('parentShouldMutate') as HTMLInputElement, value: false },
-} as const;
-document.addEventListener('DOMContentLoaded', () => {
-    Object.keys(naturalSelectionInputOptions).forEach((key) => {
-        const typedKey = key as keyof typeof naturalSelectionInputOptions;
-        const inputOption = naturalSelectionInputOptions[typedKey];
-        if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
-
-        inputOption.element.addEventListener('change', onInputChange);
-        onInputChange();
-
-        function onInputChange() {
-            if (typeof inputOption.value === "number") {
-                const newValue = inputOption.element.valueAsNumber;
-                if (!isNaN(newValue)) { inputOption.value = newValue; }
-            } else if (typeof inputOption.value === "boolean") {
-                inputOption.value = inputOption.element.checked;
-            }
-        }
-    });
-});
-
-const naturalSelectionLogElement = document.getElementById('naturalSelectionLog') as HTMLDivElement;
-const naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate') as HTMLTemplateElement;
 type NaturalSelectionEntry = {
     generation: number;
     populationSize: number;
     survivors: number | undefined;
     bestScore: number | undefined;
 }
-const naturalSelectionLog: NaturalSelectionEntry[] = [];
-function updateNaturalSelectionLog() {
-    console.log('Updating Natural Selection Log');
-    const shouldAutoScroll = naturalSelectionLogElement.scrollHeight - naturalSelectionLogElement.scrollTop <= naturalSelectionLogElement.clientHeight + 10;
+class NaturalSelection {
+    /* ---------------------------------- Logic --------------------------------- */
 
-    naturalSelectionLogElement.innerHTML = '';
-    naturalSelectionLog.forEach(entry => {
-        const entryElement = naturalSelectionEntryTemplate.content.cloneNode(true) as HTMLDivElement;
-        entryElement.querySelector('.generation')!.textContent = entry.generation.toString();
-        entryElement.querySelector('.population')!.textContent = entry.populationSize.toString();
-        entryElement.querySelector('.survivors')!.textContent = entry.survivors ? `${(entry.survivors / entry.populationSize * 100).toFixed(2)}%` : '⏳';
-        entryElement.querySelector('.bestScore')!.textContent = entry.bestScore ? entry.bestScore.toFixed(2) : '⏳';
-        naturalSelectionLogElement.appendChild(entryElement);
-    });
+    public static createInitialBatch() {
+        if (probeAngles === null) { return false; }
+        cars = Array.from({ length: this.options.populationSize.value }, () => new Car(undefined, undefined, probeAngles));
+        return true;
+    }
 
-    if (shouldAutoScroll) { naturalSelectionLogElement.scrollTop = naturalSelectionLogElement.scrollHeight; }
+    public static generationStart() {
+        cars.forEach(car => car.reset());
+        this.naturalSelectionLog.push({
+            generation: generationCount,
+            populationSize: this.options.populationSize.value,
+            survivors: undefined,
+            bestScore: undefined
+        })
+        this.updateNaturalSelectionLog();
+    }
+
+    public static generationEnd() {
+        cars.forEach((car) => {
+            car.score += getPerformanceScore(car, tickCount);
+        });
+        const sortedCars = cars.sort((a, b) => b.score - a.score);
+
+        // Elimination
+        const survivedCars: Car[] = [];
+        sortedCars.forEach((car, index) => {
+            car.rank = index + 1;
+            const willSurvive = Math.random() < this.survivalProbability(car.rank);
+
+            console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
+            if (willSurvive) { survivedCars.push(car); }
+        });
+        console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
+
+        console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
+
+        this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
+            generation: generationCount,
+            populationSize: this.options.populationSize.value,
+            survivors: survivedCars.length,
+            bestScore: sortedCars[0].score
+        };
+        this.updateNaturalSelectionLog();
+
+        return survivedCars;
+    }
+
+    public static generationPostEnd(survivedCars: Car[]) {
+        const newCars: Car[] = [];
+        while (survivedCars.length + newCars.length < this.options.populationSize.value) {
+            for (const car of survivedCars) {
+                if (Math.random() > this.reproductionProbability(car.rank)) { continue; }
+                console.log(`===== Reproducing: rank ${car.rank}, score ${car.score}, hash ${car.network.getHash()} =====`);
+
+                const newCar = car.clone();
+                newCar.network.mutate();
+                newCar.colour = randomNudgeColour(car.colour, 10);
+                newCars.push(newCar);
+            }
+        }
+
+        if (this.options.parentShouldMutate.value) {
+            survivedCars.forEach(car => car.network.mutate());
+        }
+
+        cars = [...survivedCars, ...newCars];
+    }
+
+    private static survivalProbability(rank: number): number {
+        return Math.exp(-(rank - 1) / this.options.populationSize.value * this.options.survivalHarshness.value);
+    }
+
+    private static reproductionProbability(rank: number): number {
+        return Math.exp(-(rank - 1) / this.options.populationSize.value * this.options.reproductionHarshness.value);
+    }
+
+    /* ----------------------------------- UI ----------------------------------- */
+
+    public static options: NaturalSelectionInputOptions = {
+        tickLimit: { element: document.getElementById('tickLimit') as HTMLInputElement, value: NaN },
+        populationSize: { element: document.getElementById('populationSize') as HTMLInputElement, value: NaN },
+        survivalHarshness: { element: document.getElementById('survivalHarshness') as HTMLInputElement, value: NaN },
+        reproductionHarshness: { element: document.getElementById('reproductionHarshness') as HTMLInputElement, value: NaN },
+        mutationRate: { element: document.getElementById('mutationRate') as HTMLInputElement, value: NaN },
+        parentShouldMutate: { element: document.getElementById('parentShouldMutate') as HTMLInputElement, value: false },
+    };
+
+    private static naturalSelectionLogElement = document.getElementById('naturalSelectionLog') as HTMLDivElement;
+    private static naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate') as HTMLTemplateElement;
+    public static naturalSelectionLog: NaturalSelectionEntry[] = [];
+    public static updateNaturalSelectionLog() {
+        console.log('Updating Natural Selection Log');
+        const shouldAutoScroll = this.naturalSelectionLogElement.scrollHeight - this.naturalSelectionLogElement.scrollTop <= this.naturalSelectionLogElement.clientHeight + 10;
+
+        this.naturalSelectionLogElement.innerHTML = '';
+        this.naturalSelectionLog.forEach(entry => {
+            const entryElement = this.naturalSelectionEntryTemplate.content.cloneNode(true) as HTMLDivElement;
+            entryElement.querySelector('.generation')!.textContent = entry.generation.toString();
+            entryElement.querySelector('.population')!.textContent = entry.populationSize.toString();
+            entryElement.querySelector('.survivors')!.textContent = entry.survivors ? `${(entry.survivors / entry.populationSize * 100).toFixed(2)}%` : '⏳';
+            entryElement.querySelector('.bestScore')!.textContent = entry.bestScore ? entry.bestScore.toFixed(2) : '⏳';
+            this.naturalSelectionLogElement.appendChild(entryElement);
+        });
+
+        if (shouldAutoScroll) { this.naturalSelectionLogElement.scrollTop = this.naturalSelectionLogElement.scrollHeight; }
+    }
 }
+/* ---------------------------------- Code ---------------------------------- */
+{
+    document.addEventListener('DOMContentLoaded', () => {
+        Object.keys(NaturalSelection.options).forEach((key) => {
+            const typedKey = key as keyof typeof NaturalSelection.options;
+            const inputOption = NaturalSelection.options[typedKey];
+            if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
+
+            inputOption.element.addEventListener('change', onInputChange);
+            onInputChange();
+
+            function onInputChange() {
+                if (typeof inputOption.value === "number") {
+                    const newValue = inputOption.element.valueAsNumber;
+                    if (!isNaN(newValue)) { inputOption.value = newValue; }
+                } else if (typeof inputOption.value === "boolean") {
+                    inputOption.value = inputOption.element.checked;
+                }
+            }
+        });
+    });
+}
+//#endregion
 
 const tickCounter = document.getElementById('tickCounter') as HTMLDivElement;
 function updateTickCounter() {
-    tickCounter.textContent = `Tick: ${tickCount}/${naturalSelectionInputOptions.tickLimit.value}`;
-    tickCounter.style.setProperty('--progress', `${(tickCount / naturalSelectionInputOptions.tickLimit.value) * 100}%`);
+    tickCounter.textContent = `Tick: ${tickCount}/${NaturalSelection.options.tickLimit.value}`;
+    tickCounter.style.setProperty('--progress', `${(tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
 }
 document.addEventListener('DOMContentLoaded', updateTickCounter);
-//#endregion
 
 //#region Graphics
 /* -------------------------------- Graphics -------------------------------- */
@@ -1134,7 +1140,7 @@ function* generationLoop() {
     while (true) {
         generationCount++;
         console.log(`---------- Starting Generation ${generationCount} with ${cars.length} cars ----------`);
-        generationStart();
+        NaturalSelection.generationStart();
 
         let tickLooper = tickLoop();
         let tickResult = tickLooper.next();
@@ -1150,7 +1156,7 @@ function* generationLoop() {
             yield;
         }
 
-        const survivedCars = generationEnd();
+        const survivedCars = NaturalSelection.generationEnd();
 
         if (generationLoopStopped) {
             console.log(`Generation loop stopped at generation ${generationCount}`);
@@ -1165,7 +1171,7 @@ function* generationLoop() {
             console.log(`Resuming generation loop at generation ${generationCount}`);
         }
 
-        generationPostEnd(survivedCars);
+        NaturalSelection.generationPostEnd(survivedCars);
     }
 }
 
@@ -1174,7 +1180,7 @@ function* tickLoop() {
     tickCount = 0;
     console.log(`---------- Starting Tick Loop for Generation ${generationCount} ----------`);
 
-    while (tickCount < naturalSelectionInputOptions.tickLimit.value) {
+    while (tickCount < NaturalSelection.options.tickLimit.value) {
         tickCount++;
 
         tickDo();
