@@ -1,0 +1,21 @@
+name: Trigger Submodule Update in Another Repo
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    trigger-remote:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Trigger workflow in target repo
+              env:
+                  GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+              run: |
+                  curl -X POST \
+                    -H "Accept: application/vnd.github+json" \
+                    -H "Authorization: Bearer $GH_TOKEN" \
+                    https://api.github.com/repos/CCheukKa/CCheukKa.github.io/dispatches \
+                    -d '{"event_type":"update-submodules","client_payload":{"source_repo":"${{ github.repository }}","commit_hash":"${{ github.sha }}","commit_message":"${{ github.event.head_commit.message }}"}}'
