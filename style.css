@@ -88,6 +88,31 @@ body {
         align-items: center;
         justify-content: center;
         background-color: var(--grass-colour);
+        position: relative;
+
+        #clearStadiumButton {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            cursor: pointer;
+            color: #ffffff;
+            font-weight: bold;
+            text-shadow: 0 0 5px #000000;
+            border: none;
+            background-color: #ff6060;
+            border-top-left-radius: 5px;
+            z-index: 99;
+            text-decoration: underline;
+            font-size: 12px;
+
+            &:hover {
+                background-color: #ff0000;
+            }
+        }
 
         canvas {
             position: absolute;

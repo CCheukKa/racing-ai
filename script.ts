@@ -84,6 +84,8 @@ class Stadium {
     private static hintCanvas = document.getElementById('hintCanvas') as HTMLCanvasElement;
     private static hintCtx = this.hintCanvas.getContext('2d') as CanvasRenderingContext2D;
 
+    private static clearStadiumButton = document.getElementById('clearStadiumButton') as HTMLButtonElement;
+
     public static readonly TRACK_COLOUR = '#e0e0e0';
     private static readonly TRACK_WIDTH = 50;
 
@@ -314,6 +316,12 @@ class Stadium {
                 || target instanceof HTMLButtonElement
                 || target instanceof HTMLSelectElement;
         }
+
+        this.clearStadiumButton.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to clear the stadium? This will remove all track data.')) { return; }
+            this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
+            Stadium.updateTrackData();
+        });
     }
 }
 Stadium.init();

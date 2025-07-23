@@ -256,6 +256,13 @@ class Stadium {
                 || target instanceof HTMLButtonElement
                 || target instanceof HTMLSelectElement;
         }
+        this.clearStadiumButton.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to clear the stadium? This will remove all track data.')) {
+                return;
+            }
+            this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
+            _a.updateTrackData();
+        });
     }
 }
 _a = Stadium;
@@ -272,6 +279,7 @@ Stadium.carCanvas = document.getElementById('carCanvas');
 Stadium.carCtx = _a.carCanvas.getContext('2d');
 Stadium.hintCanvas = document.getElementById('hintCanvas');
 Stadium.hintCtx = _a.hintCanvas.getContext('2d');
+Stadium.clearStadiumButton = document.getElementById('clearStadiumButton');
 Stadium.TRACK_COLOUR = '#e0e0e0';
 Stadium.TRACK_WIDTH = 50;
 Stadium.TRACK_START_X = _a.STADIUM_WIDTH / 2;
