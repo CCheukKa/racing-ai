@@ -90,6 +90,18 @@ body {
         background-color: var(--grass-colour);
         position: relative;
 
+        .tutorialText {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 99;
+            pointer-events: none;
+            font-size: 12px;
+            color: #ffffff80;
+            font-weight: normal;
+            padding: 5px 10px;
+        }
+
         #clearStadiumButton {
             position: absolute;
             bottom: 0;
