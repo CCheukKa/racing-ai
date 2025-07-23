@@ -1,4 +1,4 @@
-name: Trigger Submodule Update in Another Repo
+name: Trigger Submodule Update in Parent Repo
 
 on:
     push:
