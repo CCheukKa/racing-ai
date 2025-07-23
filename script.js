@@ -293,7 +293,7 @@ class Cars {
             inputLayerOptions: car.inputLayerOptions,
             generation: generation,
             averageSpeed: car.speedSum / ticksInGeneration,
-            onTrackPercentage: car.grassTicks / ticksInGeneration,
+            onTrackPercentage: 1 - car.grassTicks / ticksInGeneration,
         };
     }
     static deserialiseCarData(data) {
