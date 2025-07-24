@@ -515,10 +515,10 @@ body {
                 &:not(:last-child)::after {
                     content: '';
                     position: absolute;
-                    top: -50vh;
+                    top: -500vh;
                     right: 0px;
                     display: block;
-                    height: 100vh;
+                    height: 1000vh;
                     width: 1px;
                     background-color: #ffffff20;
                     pointer-events: none;
