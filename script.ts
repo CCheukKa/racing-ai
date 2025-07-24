@@ -1007,10 +1007,13 @@ NaturalSelection.init();
 /*                                 Leaderboard                                */
 /* -------------------------------------------------------------------------- */
 class LeaderBoard {
+
+    /* ---------------------------------- Logic --------------------------------- */
+
     private static leaderboardElement = document.getElementById('leaderboard') as HTMLDivElement;
     private static leaderboardEntryTemplate = document.getElementById('leaderboardEntryTemplate') as HTMLTemplateElement;
 
-    private static LEADERBOARD_MAX_ENTRIES = 20;
+    private static LEADERBOARD_MAX_ENTRIES = 100;
 
     public static leaderboard: SerialisedCarData[] = [];
     public static update() {
@@ -1035,7 +1038,28 @@ class LeaderBoard {
             this.leaderboardElement.appendChild(entryElement);
         });
     }
+
+    /* ----------------------------------- UI ----------------------------------- */
+
+    private static resetLeaderboardButton = document.getElementById('resetLeaderboardButton') as HTMLButtonElement;
+
+    private static updateCarPeeker(carData: SerialisedCarData, rank: number) {
+        LeaderBoard.carPeeker.style.setProperty('--carColour', carData.colour);
+        LeaderBoard.carPeeker.textContent = `Rank: ${rank}, Score: ${carData.score.toFixed(2)}, Lap: ${carData.lapCount.toFixed(2)}, Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
+    }
+
+    /* ---------------------------------- Code ---------------------------------- */
+
+    public static init() {
+        this.resetLeaderboardButton.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to reset the leaderboard?')) { return; }
+            this.leaderboard = [];
+            this.update();
+            console.log('Leaderboard reset');
+        });
+    }
 }
+LeaderBoard.init();
 
 /* -------------------------------------------------------------------------- */
 /*                                   Looper                                   */

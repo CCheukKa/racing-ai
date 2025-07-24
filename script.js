@@ -885,11 +885,26 @@ class LeaderBoard {
             this.leaderboardElement.appendChild(entryElement);
         });
     }
+    /* ---------------------------------- Code ---------------------------------- */
+    static init() {
+        this.resetLeaderboardButton.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to reset the leaderboard?')) {
+                return;
+            }
+            this.leaderboard = [];
+            this.update();
+            console.log('Leaderboard reset');
+        });
+    }
 }
+/* ---------------------------------- Logic --------------------------------- */
 LeaderBoard.leaderboardElement = document.getElementById('leaderboard');
 LeaderBoard.leaderboardEntryTemplate = document.getElementById('leaderboardEntryTemplate');
-LeaderBoard.LEADERBOARD_MAX_ENTRIES = 20;
+LeaderBoard.LEADERBOARD_MAX_ENTRIES = 100;
 LeaderBoard.leaderboard = [];
+/* ----------------------------------- UI ----------------------------------- */
+LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');
+LeaderBoard.init();
 /* -------------------------------------------------------------------------- */
 /*                                   Looper                                   */
 /* -------------------------------------------------------------------------- */

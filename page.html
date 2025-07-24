@@ -191,25 +191,30 @@
         </div>
         <div class="leaderboardContainer outline">
             <div class="whatText">Leaderboard</div>
-            <div class="header">
-                <div title="The rank of the car in the leaderboard">Rank</div>
-                <div title="The generation of the car">Gen</div>
-                <div title="The score of the car">Score</div>
-                <div title="The lap count of the car">Lap</div>
-                <div title="The average speed of the car">Speed</div>
-                <div title="The percentage of time the car is on the track">On Track</div>
+            <div class="leaderboardTableContainer">
+                <div class="header">
+                    <div title="The rank of the car in the leaderboard">Rank</div>
+                    <div title="The generation of the car">Gen</div>
+                    <div title="The score of the car">Score</div>
+                    <div title="The lap count of the car">Lap</div>
+                    <div title="The average speed of the car">Speed</div>
+                    <div title="The percentage of time the car is on the track">On Track</div>
+                </div>
+                <div id="leaderboard" class="scroll">
+                    <template id="leaderboardEntryTemplate">
+                        <div class="row">
+                            <div class="rank"></div>
+                            <div class="generation"></div>
+                            <div class="score"></div>
+                            <div class="lap"></div>
+                            <div class="avgSpeed"></div>
+                            <div class="onTrackPercentage"></div>
+                        </div>
+                    </template>
+                </div>
             </div>
-            <div id="leaderboard" class="scroll">
-                <template id="leaderboardEntryTemplate">
-                    <div class="row">
-                        <div class="rank"></div>
-                        <div class="generation"></div>
-                        <div class="score"></div>
-                        <div class="lap"></div>
-                        <div class="avgSpeed"></div>
-                        <div class="onTrackPercentage"></div>
-                    </div>
-                </template>
+            <div class="leaderboardBottomBar">
+                <button id="resetLeaderboardButton">Reset Leaderboard</button>
             </div>
         </div>
         <div class="tutorialContainer">
