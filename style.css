@@ -89,6 +89,7 @@ body {
         justify-content: center;
         background-color: var(--grass-colour);
         position: relative;
+        overscroll-behavior: none;
 
         .tutorialText {
             position: absolute;
