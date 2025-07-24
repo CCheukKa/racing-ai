@@ -1035,22 +1035,61 @@ class LeaderBoard {
             entryElement.querySelector('.avgSpeed')!.textContent = carData.averageSpeed.toFixed(4);
             (entryElement.querySelector('.onTrackPercentage') as HTMLDivElement).title = `${(carData.onTrackPercentage * 100)}%`;
             entryElement.querySelector('.onTrackPercentage')!.textContent = `${(carData.onTrackPercentage * 100).toFixed(2)}%`;
+
+            // Store index as a data attribute for event delegation
+            (entryElement.firstElementChild as HTMLElement).setAttribute('data-leaderboard-index', index.toString());
+
             this.leaderboardElement.appendChild(entryElement);
         });
     }
+
+    private static carPeeker = document.getElementById('carPeeker') as HTMLDivElement;
 
     /* ----------------------------------- UI ----------------------------------- */
 
     private static resetLeaderboardButton = document.getElementById('resetLeaderboardButton') as HTMLButtonElement;
 
-    private static updateCarPeeker(carData: SerialisedCarData, rank: number) {
+    private static updatePeeker = (event: MouseEvent | null) => {
+        const entry = (event?.target as HTMLElement ?? this.leaderboardElement).closest('[data-leaderboard-index]') as HTMLElement | null;
+        if (entry) {
+            const index = parseInt(entry.getAttribute('data-leaderboard-index') || '', 10);
+            if (!isNaN(index) && this.leaderboard[index]) {
+                this.updateCarPeekerContent(this.leaderboard[index], index + 1);
+                if (event) {
+                    const rect = this.leaderboardElement.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+
+                    const X_OFFSET = 10;
+                    const Y_OFFSET = 0;
+
+                    this.carPeeker.style.top = `${(y + rect.top) / zoomFactor + Y_OFFSET}px`;
+                    this.carPeeker.style.left = `${(x + rect.left) / zoomFactor + X_OFFSET}px`;
+                }
+                this.carPeeker.classList.remove('hidden');
+                return;
+            }
+        }
+        this.carPeeker.classList.add('hidden');
+    };
+    private static updateCarPeekerContent(carData: SerialisedCarData, rank: number) {
         LeaderBoard.carPeeker.style.setProperty('--carColour', carData.colour);
+        const textColour = getLuminosity(carData.colour) > 0.4 ? '#000000' : '#ffffff';
+        LeaderBoard.carPeeker.style.setProperty('--textColour', textColour);
+
         LeaderBoard.carPeeker.textContent = `Rank: ${rank}, Score: ${carData.score.toFixed(2)}, Lap: ${carData.lapCount.toFixed(2)}, Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
     }
 
     /* ---------------------------------- Code ---------------------------------- */
 
     public static init() {
+        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
+        this.leaderboardElement.addEventListener('click', (event) => { this.updatePeeker(event); });
+
+        //FIXME: doesn't capture the scroll event??
+        this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
+        this.leaderboardElement.addEventListener('mouseleave', (event) => { this.carPeeker.classList.add('hidden'); });
+
         this.resetLeaderboardButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to reset the leaderboard?')) { return; }
             this.leaderboard = [];
@@ -1259,6 +1298,15 @@ function randomNudgeColour(colour: string, scale: number): string {
     const newB = clamp(Math.round(b + (Math.random() - 0.5) * scale), 0, 255);
 
     return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
+}
+
+function getLuminosity(colour: string): number {
+    const r = parseInt(colour.slice(1, 3), 16) / 255;
+    const g = parseInt(colour.slice(3, 5), 16) / 255;
+    const b = parseInt(colour.slice(5, 7), 16) / 255;
+
+    const a = [r, g, b].map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
 }
 //#endregion
 

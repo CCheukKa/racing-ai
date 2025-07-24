@@ -9,6 +9,10 @@
     &:disabled {
         cursor: not-allowed;
     }
+
+    .hidden {
+        display: none;
+    }
 }
 
 body {
@@ -535,7 +539,7 @@ body {
                 align-items: flex-end;
                 justify-content: flex-end;
                 /* width: 0; */
-                cursor: help;
+                cursor: pointer;
                 overflow: visible;
                 text-align: right;
                 padding-right: 10px;
@@ -586,6 +590,20 @@ body {
                 background-color: #ff8888;
                 color: #000000;
             }
+        }
+
+        #carPeeker {
+            z-index: 99;
+            pointer-events: none;
+            position: absolute;
+            background-color: var(--carColour, #000000);
+            translate: 0 -100%;
+            top: -100vh;
+            left: -100vw;
+            color: var(--textColour, #ffffff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     }
 

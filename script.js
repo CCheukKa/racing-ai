@@ -1,5 +1,5 @@
 "use strict";
-var _a, _b, _c;
+var _a, _b, _c, _d;
 let areInputsLocked = false;
 document.addEventListener('DOMContentLoaded', () => {
     Array.from(document.getElementsByClassName('whatText')).forEach(e => {
@@ -882,11 +882,24 @@ class LeaderBoard {
             entryElement.querySelector('.avgSpeed').textContent = carData.averageSpeed.toFixed(4);
             entryElement.querySelector('.onTrackPercentage').title = `${(carData.onTrackPercentage * 100)}%`;
             entryElement.querySelector('.onTrackPercentage').textContent = `${(carData.onTrackPercentage * 100).toFixed(2)}%`;
+            // Store index as a data attribute for event delegation
+            entryElement.firstElementChild.setAttribute('data-leaderboard-index', index.toString());
             this.leaderboardElement.appendChild(entryElement);
         });
     }
+    static updateCarPeekerContent(carData, rank) {
+        _d.carPeeker.style.setProperty('--carColour', carData.colour);
+        const textColour = getLuminosity(carData.colour) > 0.4 ? '#000000' : '#ffffff';
+        _d.carPeeker.style.setProperty('--textColour', textColour);
+        _d.carPeeker.textContent = `Rank: ${rank}, Score: ${carData.score.toFixed(2)}, Lap: ${carData.lapCount.toFixed(2)}, Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
+    }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
+        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
+        this.leaderboardElement.addEventListener('click', (event) => { this.updatePeeker(event); });
+        //FIXME: doesn't capture the scroll event??
+        this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
+        this.leaderboardElement.addEventListener('mouseleave', (event) => { this.carPeeker.classList.add('hidden'); });
         this.resetLeaderboardButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to reset the leaderboard?')) {
                 return;
@@ -897,13 +910,36 @@ class LeaderBoard {
         });
     }
 }
+_d = LeaderBoard;
 /* ---------------------------------- Logic --------------------------------- */
 LeaderBoard.leaderboardElement = document.getElementById('leaderboard');
 LeaderBoard.leaderboardEntryTemplate = document.getElementById('leaderboardEntryTemplate');
 LeaderBoard.LEADERBOARD_MAX_ENTRIES = 100;
 LeaderBoard.leaderboard = [];
+LeaderBoard.carPeeker = document.getElementById('carPeeker');
 /* ----------------------------------- UI ----------------------------------- */
 LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');
+LeaderBoard.updatePeeker = (event) => {
+    const entry = (event?.target ?? _d.leaderboardElement).closest('[data-leaderboard-index]');
+    if (entry) {
+        const index = parseInt(entry.getAttribute('data-leaderboard-index') || '', 10);
+        if (!isNaN(index) && _d.leaderboard[index]) {
+            _d.updateCarPeekerContent(_d.leaderboard[index], index + 1);
+            if (event) {
+                const rect = _d.leaderboardElement.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                const X_OFFSET = 10;
+                const Y_OFFSET = 0;
+                _d.carPeeker.style.top = `${(y + rect.top) / zoomFactor + Y_OFFSET}px`;
+                _d.carPeeker.style.left = `${(x + rect.left) / zoomFactor + X_OFFSET}px`;
+            }
+            _d.carPeeker.classList.remove('hidden');
+            return;
+        }
+    }
+    _d.carPeeker.classList.add('hidden');
+};
 LeaderBoard.init();
 /* -------------------------------------------------------------------------- */
 /*                                   Looper                                   */
@@ -1072,6 +1108,13 @@ function randomNudgeColour(colour, scale) {
     const newG = clamp(Math.round(g + (Math.random() - 0.5) * scale), 0, 255);
     const newB = clamp(Math.round(b + (Math.random() - 0.5) * scale), 0, 255);
     return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
+}
+function getLuminosity(colour) {
+    const r = parseInt(colour.slice(1, 3), 16) / 255;
+    const g = parseInt(colour.slice(3, 5), 16) / 255;
+    const b = parseInt(colour.slice(5, 7), 16) / 255;
+    const a = [r, g, b].map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
 }
 //#endregion
 //#region Math
