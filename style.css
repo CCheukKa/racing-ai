@@ -129,6 +129,7 @@ body {
         canvas {
             position: absolute;
             cursor: none;
+            overscroll-behavior: none;
         }
 
         #hintCanvas {
