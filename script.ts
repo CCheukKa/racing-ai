@@ -1094,7 +1094,7 @@ class NaturalSelection {
 
                 const newCar = car.clone();
                 newCar.network.mutate();
-                newCar.colour = randomNudgeColour(car.colour, 10);
+                newCar.colour = mutateColour(car.colour, 15);
                 newCars.push(newCar);
             }
         }
@@ -1612,7 +1612,7 @@ function getRandomColour(): string {
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-function randomNudgeColour(colour: string, scale: number): string {
+function mutateColour(colour: string, scale: number): string {
     const r = parseInt(colour.slice(1, 3), 16);
     const g = parseInt(colour.slice(3, 5), 16);
     const b = parseInt(colour.slice(5, 7), 16);
