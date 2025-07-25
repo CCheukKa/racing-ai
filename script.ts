@@ -478,12 +478,14 @@ class Cars {
             hash: this.getHash(car),
         };
     }
-    public static deserialiseCarData(data: SerialisedCarData): Car {
-        const car = new Car(undefined, undefined, data.probeAngles);
-        car.lapCount = data.lapCount;
-        car.score = data.score;
-        car.network = data.network;
-        car.inputLayerOptions = data.inputLayerOptions;
+    public static deserialiseCarData(carData: SerialisedCarData): Car {
+        const car = new Car(undefined, undefined, carData.probeAngles);
+        const network = new Network([NeuralNetwork.getInputLayerSize(), ...NeuralNetwork.hiddenLayerSizes, 2]);
+        network.layers = carData.network.layers;
+        car.lapCount = carData.lapCount;
+        car.score = carData.score;
+        car.network = network;
+        car.inputLayerOptions = carData.inputLayerOptions;
         return car;
     }
 
