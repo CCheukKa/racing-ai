@@ -1123,7 +1123,7 @@ class LeaderBoard {
         NeuralNetwork.redrawNeuralNetwork(carData.network.inputNodes, carData.network.layers.map(layer => layer.nodes.length).slice(0, -1), carData.probeAngles, carData.colour, this.carPeekerNeuralNetworkCanvas, this.carPeekerNeuralNetworkCtx);
         this.carPeekerNeuralNetworkLayers.innerHTML = `Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`;
         Garage.redrawCarProbes(1, carData.probeAngles, carData.colour, this.carPeekerProbeAnglesCanvas, this.carPeekerProbeAnglesCtx);
-        this.carPeekerProbeAnglesList.innerHTML = `Angles: ${carData.probeAngles.map(angle => `${(angle * 180 / Math.PI)}°`).join(', ')}`;
+        this.carPeekerProbeAnglesList.innerHTML = `Angles: ${carData.probeAngles.map(angle => `${Math.round(angle * 180 / Math.PI * 100000) / 100000}°`).join(', ')}`;
     }
     static getSelectedLeaderboardEntryIndex(event) {
         if (!event) {

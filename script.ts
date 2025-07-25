@@ -1352,7 +1352,7 @@ class LeaderBoard {
             this.carPeekerProbeAnglesCanvas,
             this.carPeekerProbeAnglesCtx
         );
-        this.carPeekerProbeAnglesList.innerHTML = `Angles: ${carData.probeAngles.map(angle => `${(angle * 180 / Math.PI)}°`).join(', ')}`;
+        this.carPeekerProbeAnglesList.innerHTML = `Angles: ${carData.probeAngles.map(angle => `${Math.round(angle * 180 / Math.PI * 100000) / 100000}°`).join(', ')}`;
     }
 
     private static getSelectedLeaderboardEntryIndex(event: MouseEvent | null): { index: number | null, entry: HTMLElement | null } {
