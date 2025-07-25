@@ -1,11 +1,13 @@
-let areInputsLocked = false;
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => { recalculateWhatTextSizes(); });
+function recalculateWhatTextSizes() {
     Array.from(document.getElementsByClassName('whatText')).forEach(e => {
         const element = e as HTMLElement;
         element.style.width = element.parentElement?.clientWidth + 'px';
         element.style.height = element.parentElement?.clientHeight + 'px';
     });
-});
+}
+
+let areInputsLocked = false;
 const lockableElements: (HTMLButtonElement | HTMLTextAreaElement | HTMLInputElement)[] = [];
 function lockInputs(lock: boolean) {
     if (areInputsLocked === lock) { return };
@@ -130,12 +132,14 @@ function importCarFiles(files: FileList | File[]) {
             const hashes = results.map(car => car.hash).join('\n');
             if (!confirm(`Are you sure you want to import all ${results.length} cars?\n\nHashes:\n${hashes}`)) return;
         }
-        results.forEach(({ hash, data }) => {
+        results.forEach(({ hash, data: carData }) => {
             if (results.length === 1) {
                 if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash}`)) return;
             }
-            const car = Cars.deserialiseCarData(data);
+            const car = Cars.deserialiseCarData(carData);
             cars.push(car);
+            LeaderBoard.leaderboard.push(carData);
+            LeaderBoard.update();
             Stadium.drawCars();
             console.log('Car imported:', car);
         });
@@ -144,6 +148,18 @@ function importCarFiles(files: FileList | File[]) {
         console.error('Failed to import car(s):', error);
     });
 }
+
+let isRaceMode = false;
+const raceModeButton = document.getElementById('raceModeButton') as HTMLButtonElement;
+raceModeButton.addEventListener('click', () => {
+    isRaceMode = !isRaceMode;
+    document.body.classList.toggle('raceMode', isRaceMode);
+    Stadium.STADIUM_WIDTH = isRaceMode ? 985 : 600;
+    Stadium.recalculateCanvasSizes();
+    setTimeout(() => {
+        recalculateWhatTextSizes();
+    }, 200);
+});
 
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
@@ -202,8 +218,8 @@ class Stadium {
     public static readonly TRACK_COLOUR = '#e0e0e0';
     private static readonly TRACK_WIDTH = 50;
 
-    public static readonly TRACK_START_X = Stadium.STADIUM_WIDTH / 2;
-    public static readonly TRACK_START_Y = Stadium.STADIUM_HEIGHT / 4;
+    public static TRACK_START_X = NaN;
+    public static TRACK_START_Y = NaN;
 
     private static trackData: Uint8ClampedArray<ArrayBufferLike> = new Uint8ClampedArray();
 
@@ -305,21 +321,25 @@ class Stadium {
         return score;
     }
 
+    public static recalculateCanvasSizes() {
+        this.TRACK_START_X = Stadium.STADIUM_WIDTH / 2;
+        this.TRACK_START_Y = Stadium.STADIUM_HEIGHT / 4;
+        this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
+        this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
+        this.trackCanvas.width = this.STADIUM_WIDTH;
+        this.trackCanvas.height = this.STADIUM_HEIGHT;
+        this.carCanvas.width = this.STADIUM_WIDTH;
+        this.carCanvas.height = this.STADIUM_HEIGHT;
+        this.hintCanvas.width = this.STADIUM_WIDTH;
+        this.hintCanvas.height = this.STADIUM_HEIGHT;
+        this.redrawHint(NaN, NaN);
+        Stadium.updateTrackData();
+    }
+
     /* ---------------------------------- Code ---------------------------------- */
 
     public static init() {
-        document.addEventListener('DOMContentLoaded', () => {
-            this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
-            this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
-            this.trackCanvas.width = this.STADIUM_WIDTH;
-            this.trackCanvas.height = this.STADIUM_HEIGHT;
-            this.carCanvas.width = this.STADIUM_WIDTH;
-            this.carCanvas.height = this.STADIUM_HEIGHT;
-            this.hintCanvas.width = this.STADIUM_WIDTH;
-            this.hintCanvas.height = this.STADIUM_HEIGHT;
-            this.redrawHint(NaN, NaN);
-            Stadium.updateTrackData();
-        });
+        document.addEventListener('DOMContentLoaded', () => { this.recalculateCanvasSizes(); });
 
         let isLeftMouseDown = false;
         let isRightMouseDown = false;
@@ -995,6 +1015,7 @@ class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
 
     public static createInitialBatch() {
+        if (isRaceMode) { return true; }
         if (Garage.probeAngles === null) { return false; }
         cars = Array.from({ length: this.options.populationSize.value }, () => new Car(undefined, undefined, Garage.probeAngles));
         return true;
@@ -1020,25 +1041,29 @@ class NaturalSelection {
         LeaderBoard.leaderboard.push(...sortedCars.map(car => Cars.serialiseCarData(car, Looper.generationCount, Looper.tickCount)));
 
         // Elimination
-        const survivedCars: Car[] = [];
-        sortedCars.forEach((car, index) => {
-            car.rank = index + 1;
-            const willSurvive = Math.random() < this.survivalProbability(car.rank);
+        let survivedCars: Car[] = [];
+        if (isRaceMode) {
+            survivedCars = cars;
+        } else {
+            sortedCars.forEach((car, index) => {
+                car.rank = index + 1;
+                const willSurvive = Math.random() < this.survivalProbability(car.rank);
 
-            console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
-            if (willSurvive) { survivedCars.push(car); }
-        });
-        console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
+                console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
+                if (willSurvive) { survivedCars.push(car); }
+            });
+            console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
 
-        console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
+            console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
 
-        this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
-            generation: Looper.generationCount,
-            populationSize: this.options.populationSize.value,
-            survivors: survivedCars.length,
-            bestScore: sortedCars[0].score
-        };
-        this.updateLog();
+            this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
+                generation: Looper.generationCount,
+                populationSize: this.options.populationSize.value,
+                survivors: survivedCars.length,
+                bestScore: sortedCars[0].score
+            };
+            this.updateLog();
+        }
 
         LeaderBoard.update();
 
@@ -1276,8 +1301,8 @@ class LeaderBoard {
             `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
             `Generation: ${carData.generation}`,
             `Probe Angles: ${carData.probeAngles.map(angle => (angle * 180 / Math.PI).toFixed(2)).join(', ')}`,
-            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
             `Inputs: ${carInputs.join(', ')}`,
+            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
         ];
         LeaderBoard.carPeeker.innerHTML = content.join('<br>');
     }
@@ -1370,6 +1395,8 @@ class Looper {
             console.log(`---------- Starting Generation ${this.generationCount} with ${cars.length} cars ----------`);
             NaturalSelection.generationStart();
 
+            if (isRaceMode) { this.generationLoopButton.click(); }
+
             let tickLooper = this.tickLoop();
             let tickResult = tickLooper.next();
             while (!tickResult.done) {
@@ -1398,7 +1425,7 @@ class Looper {
                 this.generationLoopButton.disabled = false;
                 console.log(`Resuming generation loop at generation ${this.generationCount}`);
             }
-            NaturalSelection.generationPostEnd(survivedCars);
+            if (!isRaceMode) { NaturalSelection.generationPostEnd(survivedCars); }
         }
     }
 
@@ -1442,10 +1469,8 @@ class Looper {
         });
 
         this.generationLoopButton.addEventListener('click', () => {
-            if (!this.generationLoopStopped) {
-                this.generationLoopStopped = true;
-                this.generationLoopButton.disabled = true;
-            }
+            this.generationLoopStopped = true;
+            this.generationLoopButton.disabled = true;
         });
     }
 }

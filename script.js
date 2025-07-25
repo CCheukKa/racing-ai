@@ -1,13 +1,14 @@
 "use strict";
 var _a, _b, _c, _d;
-let areInputsLocked = false;
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => { recalculateWhatTextSizes(); });
+function recalculateWhatTextSizes() {
     Array.from(document.getElementsByClassName('whatText')).forEach(e => {
         const element = e;
         element.style.width = element.parentElement?.clientWidth + 'px';
         element.style.height = element.parentElement?.clientHeight + 'px';
     });
-});
+}
+let areInputsLocked = false;
 const lockableElements = [];
 function lockInputs(lock) {
     if (areInputsLocked === lock) {
@@ -127,13 +128,15 @@ function importCarFiles(files) {
             if (!confirm(`Are you sure you want to import all ${results.length} cars?\n\nHashes:\n${hashes}`))
                 return;
         }
-        results.forEach(({ hash, data }) => {
+        results.forEach(({ hash, data: carData }) => {
             if (results.length === 1) {
                 if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash}`))
                     return;
             }
-            const car = Cars.deserialiseCarData(data);
+            const car = Cars.deserialiseCarData(carData);
             cars.push(car);
+            LeaderBoard.leaderboard.push(carData);
+            LeaderBoard.update();
             Stadium.drawCars();
             console.log('Car imported:', car);
         });
@@ -142,6 +145,17 @@ function importCarFiles(files) {
         console.error('Failed to import car(s):', error);
     });
 }
+let isRaceMode = false;
+const raceModeButton = document.getElementById('raceModeButton');
+raceModeButton.addEventListener('click', () => {
+    isRaceMode = !isRaceMode;
+    document.body.classList.toggle('raceMode', isRaceMode);
+    Stadium.STADIUM_WIDTH = isRaceMode ? 985 : 600;
+    Stadium.recalculateCanvasSizes();
+    setTimeout(() => {
+        recalculateWhatTextSizes();
+    }, 200);
+});
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
@@ -253,20 +267,23 @@ class Stadium {
         score += interpolate(car.speedSum / atTick, [0, 1], [-100, 100]);
         return score;
     }
+    static recalculateCanvasSizes() {
+        this.TRACK_START_X = _a.STADIUM_WIDTH / 2;
+        this.TRACK_START_Y = _a.STADIUM_HEIGHT / 4;
+        this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
+        this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
+        this.trackCanvas.width = this.STADIUM_WIDTH;
+        this.trackCanvas.height = this.STADIUM_HEIGHT;
+        this.carCanvas.width = this.STADIUM_WIDTH;
+        this.carCanvas.height = this.STADIUM_HEIGHT;
+        this.hintCanvas.width = this.STADIUM_WIDTH;
+        this.hintCanvas.height = this.STADIUM_HEIGHT;
+        this.redrawHint(NaN, NaN);
+        _a.updateTrackData();
+    }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
-        document.addEventListener('DOMContentLoaded', () => {
-            this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
-            this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
-            this.trackCanvas.width = this.STADIUM_WIDTH;
-            this.trackCanvas.height = this.STADIUM_HEIGHT;
-            this.carCanvas.width = this.STADIUM_WIDTH;
-            this.carCanvas.height = this.STADIUM_HEIGHT;
-            this.hintCanvas.width = this.STADIUM_WIDTH;
-            this.hintCanvas.height = this.STADIUM_HEIGHT;
-            this.redrawHint(NaN, NaN);
-            _a.updateTrackData();
-        });
+        document.addEventListener('DOMContentLoaded', () => { this.recalculateCanvasSizes(); });
         let isLeftMouseDown = false;
         let isRightMouseDown = false;
         let previousX;
@@ -394,8 +411,8 @@ Stadium.hintCtx = _a.hintCanvas.getContext('2d');
 Stadium.clearStadiumButton = document.getElementById('clearStadiumButton');
 Stadium.TRACK_COLOUR = '#e0e0e0';
 Stadium.TRACK_WIDTH = 50;
-Stadium.TRACK_START_X = _a.STADIUM_WIDTH / 2;
-Stadium.TRACK_START_Y = _a.STADIUM_HEIGHT / 4;
+Stadium.TRACK_START_X = NaN;
+Stadium.TRACK_START_Y = NaN;
 Stadium.trackData = new Uint8ClampedArray();
 Stadium.init();
 /* -------------------------------------------------------------------------- */
@@ -878,6 +895,9 @@ NeuralNetwork.init();
 class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
     static createInitialBatch() {
+        if (isRaceMode) {
+            return true;
+        }
         if (Garage.probeAngles === null) {
             return false;
         }
@@ -901,24 +921,29 @@ class NaturalSelection {
         const sortedCars = cars.sort((a, b) => b.score - a.score);
         LeaderBoard.leaderboard.push(...sortedCars.map(car => Cars.serialiseCarData(car, Looper.generationCount, Looper.tickCount)));
         // Elimination
-        const survivedCars = [];
-        sortedCars.forEach((car, index) => {
-            car.rank = index + 1;
-            const willSurvive = Math.random() < this.survivalProbability(car.rank);
-            console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
-            if (willSurvive) {
-                survivedCars.push(car);
-            }
-        });
-        console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
-        console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
-        this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
-            generation: Looper.generationCount,
-            populationSize: this.options.populationSize.value,
-            survivors: survivedCars.length,
-            bestScore: sortedCars[0].score
-        };
-        this.updateLog();
+        let survivedCars = [];
+        if (isRaceMode) {
+            survivedCars = cars;
+        }
+        else {
+            sortedCars.forEach((car, index) => {
+                car.rank = index + 1;
+                const willSurvive = Math.random() < this.survivalProbability(car.rank);
+                console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
+                if (willSurvive) {
+                    survivedCars.push(car);
+                }
+            });
+            console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
+            console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
+            this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
+                generation: Looper.generationCount,
+                populationSize: this.options.populationSize.value,
+                survivors: survivedCars.length,
+                bestScore: sortedCars[0].score
+            };
+            this.updateLog();
+        }
         LeaderBoard.update();
         return survivedCars;
     }
@@ -1077,8 +1102,8 @@ class LeaderBoard {
             `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
             `Generation: ${carData.generation}`,
             `Probe Angles: ${carData.probeAngles.map(angle => (angle * 180 / Math.PI).toFixed(2)).join(', ')}`,
-            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
             `Inputs: ${carInputs.join(', ')}`,
+            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
         ];
         _d.carPeeker.innerHTML = content.join('<br>');
     }
@@ -1187,6 +1212,9 @@ class Looper {
             this.generationCount++;
             console.log(`---------- Starting Generation ${this.generationCount} with ${cars.length} cars ----------`);
             NaturalSelection.generationStart();
+            if (isRaceMode) {
+                this.generationLoopButton.click();
+            }
             let tickLooper = this.tickLoop();
             let tickResult = tickLooper.next();
             while (!tickResult.done) {
@@ -1213,7 +1241,9 @@ class Looper {
                 this.generationLoopButton.disabled = false;
                 console.log(`Resuming generation loop at generation ${this.generationCount}`);
             }
-            NaturalSelection.generationPostEnd(survivedCars);
+            if (!isRaceMode) {
+                NaturalSelection.generationPostEnd(survivedCars);
+            }
         }
     }
     static *tickLoop() {
@@ -1245,10 +1275,8 @@ class Looper {
             }
         });
         this.generationLoopButton.addEventListener('click', () => {
-            if (!this.generationLoopStopped) {
-                this.generationLoopStopped = true;
-                this.generationLoopButton.disabled = true;
-            }
+            this.generationLoopStopped = true;
+            this.generationLoopButton.disabled = true;
         });
     }
 }
