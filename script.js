@@ -1026,6 +1026,9 @@ class NaturalSelection {
                 inputOption.element.addEventListener('change', onInputChange);
                 onInputChange();
                 function onInputChange() {
+                    if (!inputOption.element.validity.valid) {
+                        return;
+                    }
                     if (typeof inputOption.value === "number") {
                         const newValue = inputOption.element.valueAsNumber;
                         if (!isNaN(newValue)) {
@@ -1372,6 +1375,9 @@ class Looper {
         });
         this.targetTickSpeedInput.addEventListener('change', onTargetTickSpeedInputChange);
         function onTargetTickSpeedInputChange() {
+            if (!Looper.targetTickSpeedInput.validity.valid) {
+                return;
+            }
             const newTargetTPS = parseFloat(Looper.targetTickSpeedInput.value);
             Looper.targetTPS = newTargetTPS;
             if (cookie === null) {
