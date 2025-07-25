@@ -302,6 +302,7 @@ class Cars {
             generation: generation,
             averageSpeed: car.speedSum / ticksInGeneration,
             onTrackPercentage: 1 - car.grassTicks / ticksInGeneration,
+            hash: this.getHash(car),
         };
     }
     static deserialiseCarData(data) {
@@ -311,6 +312,12 @@ class Cars {
         car.network = data.network;
         car.inputLayerOptions = data.inputLayerOptions;
         return car;
+    }
+    static getHash(car) {
+        const probeAnglesHash = JSON.stringify(car.probes);
+        const networkWeightsHash = car.network.getHash();
+        const hash = sha1(probeAnglesHash, networkWeightsHash);
+        return hash;
     }
 }
 class Probe {
@@ -716,9 +723,7 @@ class Network {
     }
     getHash() {
         const wbString = this.layers.map(layer => layer.nodes.map(node => `${node.weights.join(',')},${node.bias}`).join(';')).join('|');
-        const hash = Array.from(wbString).reduce((hash, char) => {
-            return (hash << 5) - hash + char.charCodeAt(0);
-        }, 0).toString(36);
+        const hash = sha1(wbString);
         return hash;
     }
 }
@@ -889,7 +894,16 @@ class LeaderBoard {
     }
     static updateCarPeekerContent(carData, rank) {
         _d.carPeeker.style.setProperty('--carColour', carData.colour);
-        _d.carPeeker.innerHTML = `Rank: ${rank}<br>Score: ${carData.score.toFixed(2)}<br>Lap: ${carData.lapCount.toFixed(2)}<br>Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
+        const content = [
+            `Rank: ${rank}`,
+            `Score: ${carData.score.toFixed(2)}`,
+            `Lap: ${carData.lapCount.toFixed(2)}`,
+            `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
+            `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
+            `Generation: ${carData.generation}`,
+            `Hash: ${carData.hash.slice(0, 8)}...`,
+        ];
+        _d.carPeeker.innerHTML = content.join('<br>');
     }
     static getSelectedLeaderboardEntryIndex(event) {
         if (!event) {
@@ -909,7 +923,7 @@ class LeaderBoard {
         if (index === null || !this.leaderboard[index]) {
             return;
         }
-        const carData = this.leaderboard[index];
+        this.selectedCarData = this.leaderboard[index];
         this.leaderboardElement.querySelectorAll('.entry').forEach(el => el.classList.remove('selected'));
         entry?.classList.add('selected');
     }
@@ -932,6 +946,19 @@ class LeaderBoard {
             this.update();
             console.log('Leaderboard reset');
         });
+        this.exportSelectedCarButton.addEventListener('click', () => {
+            if (!this.selectedCarData) {
+                alert('Please select a car from the leaderboard first.');
+                return;
+            }
+            const blob = new Blob([JSON.stringify(this.selectedCarData, null, 4)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `car_${this.selectedCarData.hash}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
     }
 }
 _d = LeaderBoard;
@@ -942,7 +969,9 @@ LeaderBoard.LEADERBOARD_MAX_ENTRIES = 100;
 LeaderBoard.leaderboard = [];
 LeaderBoard.carPeeker = document.getElementById('carPeeker');
 /* ----------------------------------- UI ----------------------------------- */
+LeaderBoard.selectedCarData = null;
 LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');
+LeaderBoard.exportSelectedCarButton = document.getElementById('exportSelectedCarButton');
 LeaderBoard.updatePeeker = (event) => {
     const { index } = _d.getSelectedLeaderboardEntryIndex(event);
     if (index !== null && _d.leaderboard[index]) {
@@ -1163,5 +1192,97 @@ function interpolate(value, inPoints, outPoints) {
         }
     }
     return output;
+}
+function sha1(...inputs) {
+    let input = inputs.join('|');
+    // Adapted from https://geraintluff.github.io/sha1/
+    function rotate_left(n, s) { return (n << s) | (n >>> (32 - s)); }
+    function cvt_hex(val) {
+        let str = "";
+        for (let i = 7; i >= 0; i--) {
+            str += ((val >>> (i * 4)) & 0x0f).toString(16);
+        }
+        return str;
+    }
+    let blockStart;
+    const W = new Array(80);
+    let H0 = 0x67452301;
+    let H1 = 0xEFCDAB89;
+    let H2 = 0x98BADCFE;
+    let H3 = 0x10325476;
+    let H4 = 0xC3D2E1F0;
+    let A, B, C, D, E;
+    let temp;
+    // UTF-8 encode
+    input = unescape(encodeURIComponent(input));
+    const str_len = input.length;
+    const word_array = [];
+    for (let i = 0; i < str_len - 3; i += 4) {
+        word_array.push((input.charCodeAt(i) << 24) |
+            (input.charCodeAt(i + 1) << 16) |
+            (input.charCodeAt(i + 2) << 8) |
+            (input.charCodeAt(i + 3)));
+    }
+    let i = str_len % 4;
+    let tmp = 0;
+    if (i === 0) {
+        tmp = 0x080000000;
+    }
+    else if (i === 1) {
+        tmp = (input.charCodeAt(str_len - 1) << 24) | 0x0800000;
+    }
+    else if (i === 2) {
+        tmp = (input.charCodeAt(str_len - 2) << 24) | (input.charCodeAt(str_len - 1) << 16) | 0x08000;
+    }
+    else if (i === 3) {
+        tmp = (input.charCodeAt(str_len - 3) << 24) | (input.charCodeAt(str_len - 2) << 16) | (input.charCodeAt(str_len - 1) << 8) | 0x80;
+    }
+    word_array.push(tmp);
+    while ((word_array.length % 16) !== 14)
+        word_array.push(0);
+    word_array.push(str_len >>> 29);
+    word_array.push((str_len << 3) & 0x0ffffffff);
+    for (blockStart = 0; blockStart < word_array.length; blockStart += 16) {
+        for (let i = 0; i < 16; i++)
+            W[i] = word_array[blockStart + i];
+        for (let i = 16; i < 80; i++)
+            W[i] = rotate_left(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
+        A = H0;
+        B = H1;
+        C = H2;
+        D = H3;
+        E = H4;
+        for (let i = 0; i < 80; i++) {
+            let f, k;
+            if (i < 20) {
+                f = (B & C) | ((~B) & D);
+                k = 0x5A827999;
+            }
+            else if (i < 40) {
+                f = B ^ C ^ D;
+                k = 0x6ED9EBA1;
+            }
+            else if (i < 60) {
+                f = (B & C) | (B & D) | (C & D);
+                k = 0x8F1BBCDC;
+            }
+            else {
+                f = B ^ C ^ D;
+                k = 0xCA62C1D6;
+            }
+            temp = (rotate_left(A, 5) + f + E + k + W[i]) & 0x0ffffffff;
+            E = D;
+            D = C;
+            C = rotate_left(B, 30);
+            B = A;
+            A = temp;
+        }
+        H0 = (H0 + A) & 0x0ffffffff;
+        H1 = (H1 + B) & 0x0ffffffff;
+        H2 = (H2 + C) & 0x0ffffffff;
+        H3 = (H3 + D) & 0x0ffffffff;
+        H4 = (H4 + E) & 0x0ffffffff;
+    }
+    return cvt_hex(H0) + cvt_hex(H1) + cvt_hex(H2) + cvt_hex(H3) + cvt_hex(H4);
 }
 //#endregion

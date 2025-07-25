@@ -575,26 +575,34 @@ body {
             display: flex;
             flex-direction: row;
             align-items: center;
-            justify-content: space-around;
+            justify-content: space-between;
         }
 
+        #exportSelectedCarButton,
         #resetLeaderboardButton {
-            border: 1px solid #ff8888;
-            background-color: #ffffff20;
+            border: 1px solid var(--buttonColour);
             color: #ffffff;
+            background-color: #ffffff20;
             font-weight: bold;
-            padding: 3px;
+            padding: 3px 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 5px;
-            width: 50%;
             cursor: pointer;
 
             &:hover {
-                background-color: #ff8888;
+                background-color: var(--buttonColour);
                 color: #000000;
             }
+        }
+
+        #exportSelectedCarButton {
+            --buttonColour: #88ff88;
+        }
+
+        #resetLeaderboardButton {
+            --buttonColour: #ff8888;
         }
 
         #carPeeker {
