@@ -889,9 +889,7 @@ class LeaderBoard {
     }
     static updateCarPeekerContent(carData, rank) {
         _d.carPeeker.style.setProperty('--carColour', carData.colour);
-        const textColour = getLuminosity(carData.colour) > 0.4 ? '#000000' : '#ffffff';
-        _d.carPeeker.style.setProperty('--textColour', textColour);
-        _d.carPeeker.textContent = `Rank: ${rank}, Score: ${carData.score.toFixed(2)}, Lap: ${carData.lapCount.toFixed(2)}, Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
+        _d.carPeeker.innerHTML = `Rank: ${rank}<br>Score: ${carData.score.toFixed(2)}<br>Lap: ${carData.lapCount.toFixed(2)}<br>Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
     }
     static getSelectedLeaderboardEntryIndex(event) {
         if (!event) {
@@ -1132,13 +1130,6 @@ function randomNudgeColour(colour, scale) {
     const newG = clamp(Math.round(g + (Math.random() - 0.5) * scale), 0, 255);
     const newB = clamp(Math.round(b + (Math.random() - 0.5) * scale), 0, 255);
     return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
-}
-function getLuminosity(colour) {
-    const r = parseInt(colour.slice(1, 3), 16) / 255;
-    const g = parseInt(colour.slice(3, 5), 16) / 255;
-    const b = parseInt(colour.slice(5, 7), 16) / 255;
-    const a = [r, g, b].map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
 }
 //#endregion
 //#region Math

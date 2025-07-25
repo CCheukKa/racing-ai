@@ -601,14 +601,19 @@ body {
             z-index: 99;
             pointer-events: none;
             position: absolute;
-            background-color: var(--carColour, #000000);
+            background-color: rgba(from var(--carColour, #000000) r g b / 0.8);
+            backdrop-filter: blur(5px);
             translate: 0 -100%;
             top: -100vh;
             left: -100vw;
-            color: var(--textColour, #ffffff);
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 5px;
+            border-radius: 5px;
+            border: 2px solid #ffffff;
+            text-shadow: 0 0 10px #000000;
         }
     }
 
