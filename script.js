@@ -502,7 +502,7 @@ class NeuralNetwork {
         if (this.options.performanceScore.value) {
             size++;
         }
-        if (this.options.tickNumber.value) {
+        if (this.options.currentTick.value) {
             size++;
         }
         return size;
@@ -518,7 +518,7 @@ class NeuralNetwork {
             this.options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
             this.options.roadScore.value ? car.score : NaN,
             this.options.performanceScore.value ? Stadium.getPerformanceScore(car, Looper.tickCount) : NaN,
-            this.options.tickNumber.value ? Looper.tickCount : NaN
+            this.options.currentTick.value ? Looper.tickCount : NaN
         ].filter(value => !isNaN(value));
         return inputLayerValues;
     }
@@ -533,7 +533,7 @@ class NeuralNetwork {
             onTrack: this.options.onTrack.value,
             roadScore: this.options.roadScore.value,
             performanceScore: this.options.performanceScore.value,
-            tickNumber: this.options.tickNumber.value,
+            currentTick: this.options.currentTick.value,
         };
     }
     static redraw() {
@@ -665,7 +665,7 @@ NeuralNetwork.options = {
     onTrack: { element: document.getElementById('onTrack') },
     roadScore: { element: document.getElementById('roadScore') },
     performanceScore: { element: document.getElementById('performanceScore') },
-    tickNumber: { element: document.getElementById('tickNumber') },
+    currentTick: { element: document.getElementById('tickNumber') },
 };
 class LNodes {
     constructor(numInputs) {
@@ -894,14 +894,23 @@ class LeaderBoard {
     }
     static updateCarPeekerContent(carData, rank) {
         _d.carPeeker.style.setProperty('--carColour', carData.colour);
+        const carInputs = [];
+        for (const option in carData.inputLayerOptions) {
+            if (carData.inputLayerOptions[option]) {
+                carInputs.push(option);
+            }
+        }
         const content = [
+            `Hash: ${carData.hash.slice(0, 8)}...`,
             `Rank: ${rank}`,
             `Score: ${carData.score.toFixed(2)}`,
             `Lap: ${carData.lapCount.toFixed(2)}`,
             `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
             `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
             `Generation: ${carData.generation}`,
-            `Hash: ${carData.hash.slice(0, 8)}...`,
+            `Probe Angles: ${carData.probeAngles.map(angle => (angle * 180 / Math.PI).toFixed(2)).join(', ')}`,
+            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
+            `Inputs: ${carInputs.join(', ')}`,
         ];
         _d.carPeeker.innerHTML = content.join('<br>');
     }

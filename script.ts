@@ -580,7 +580,7 @@ class NeuralNetwork {
         if (this.options.onTrack.value) { size++; }
         if (this.options.roadScore.value) { size++; }
         if (this.options.performanceScore.value) { size++; }
-        if (this.options.tickNumber.value) { size++; }
+        if (this.options.currentTick.value) { size++; }
         return size;
     }
     public static getInputLayerValues(car: Car): number[] {
@@ -594,7 +594,7 @@ class NeuralNetwork {
             this.options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
             this.options.roadScore.value ? car.score : NaN,
             this.options.performanceScore.value ? Stadium.getPerformanceScore(car, Looper.tickCount) : NaN,
-            this.options.tickNumber.value ? Looper.tickCount : NaN
+            this.options.currentTick.value ? Looper.tickCount : NaN
         ].filter(value => !isNaN(value));
         return inputLayerValues
     }
@@ -620,7 +620,7 @@ class NeuralNetwork {
             onTrack: this.options.onTrack.value!,
             roadScore: this.options.roadScore.value!,
             performanceScore: this.options.performanceScore.value!,
-            tickNumber: this.options.tickNumber.value!,
+            currentTick: this.options.currentTick.value!,
         };
     }
     private static options: NeuralNetworkInputOptions = {
@@ -633,7 +633,7 @@ class NeuralNetwork {
         onTrack: { element: document.getElementById('onTrack') as HTMLInputElement },
         roadScore: { element: document.getElementById('roadScore') as HTMLInputElement },
         performanceScore: { element: document.getElementById('performanceScore') as HTMLInputElement },
-        tickNumber: { element: document.getElementById('tickNumber') as HTMLInputElement },
+        currentTick: { element: document.getElementById('tickNumber') as HTMLInputElement },
     } as const;
 
     public static redraw() {
@@ -840,7 +840,7 @@ type NeuralNetworkInputOptions = {
     onTrack: NeuralNetworkInputOption,
     roadScore: NeuralNetworkInputOption,
     performanceScore: NeuralNetworkInputOption,
-    tickNumber: NeuralNetworkInputOption,
+    currentTick: NeuralNetworkInputOption,
 };
 NeuralNetwork.init();
 
@@ -1083,14 +1083,25 @@ class LeaderBoard {
     };
     private static updateCarPeekerContent(carData: SerialisedCarData, rank: number) {
         LeaderBoard.carPeeker.style.setProperty('--carColour', carData.colour);
+
+        const carInputs: string[] = [];
+        for (const option in carData.inputLayerOptions) {
+            if (carData.inputLayerOptions[option as keyof SerialisedInputLayerOptions]) {
+                carInputs.push(option);
+            }
+        }
+
         const content = [
+            `Hash: ${carData.hash.slice(0, 8)}...`,
             `Rank: ${rank}`,
             `Score: ${carData.score.toFixed(2)}`,
             `Lap: ${carData.lapCount.toFixed(2)}`,
             `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
             `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
             `Generation: ${carData.generation}`,
-            `Hash: ${carData.hash.slice(0, 8)}...`,
+            `Probe Angles: ${carData.probeAngles.map(angle => (angle * 180 / Math.PI).toFixed(2)).join(', ')}`,
+            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
+            `Inputs: ${carInputs.join(', ')}`,
         ];
         LeaderBoard.carPeeker.innerHTML = content.join('<br>');
     }
