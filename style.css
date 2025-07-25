@@ -27,6 +27,8 @@ body {
     align-items: center;
     justify-content: center;
     height: 100svh;
+    overflow: hidden;
+    overscroll-behavior: none;
 }
 
 .outline {
