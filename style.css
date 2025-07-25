@@ -53,6 +53,10 @@ body {
                 pointer-events: none;
             }
         }
+
+        .miscellaneousContainer {
+            grid-area: 1 / 4 / 3 / 5 !important;
+        }
     }
 }
 
