@@ -40,6 +40,7 @@ type Cookie = {
     inputLayerOptions?: SerialisedInputLayerOptions;
     hiddenLayerSizes?: number[];
     naturalSelectionOptions?: SerialisedNaturalSelectionOptions;
+    targetTPS?: number;
 };
 var cookie: Cookie | null = null;
 const COOKIE_ROOT_NAME = 'cck-wtf-racing-ai';
@@ -161,9 +162,6 @@ raceModeButton.addEventListener('click', () => {
     }, 200);
 });
 
-const tickSpeedDisplay = document.getElementById('tickSpeed') as HTMLDivElement;
-const tickDurations: number[] = [];
-
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
@@ -176,18 +174,7 @@ class Stadium {
 
     public static tickDo() {
         NaturalSelection.updateTickCounter();
-
-        const tickStart = performance.now();
         this.processCars();
-        const tickEnd = performance.now();
-        const tickDuration = tickEnd - tickStart;
-        tickDurations.push(tickDuration);
-        if (tickDurations.length > 100) {
-            tickDurations.shift();
-        }
-        const averageTickDuration = tickDurations.reduce((sum, duration) => sum + duration, 0) / tickDurations.length;
-        tickSpeedDisplay.textContent = `TPS: ${Math.round(1000 / averageTickDuration)}`;
-
         this.drawCars();
         cars.forEach(this.updateRoadScore);
     }
@@ -1444,18 +1431,79 @@ LeaderBoard.init();
 class Looper {
     /* ---------------------------------- Logic --------------------------------- */
 
+    private static ticksInLastSecond: number = 0;
+    private static lastTPSUpdateTime: number = 0;
+    private static actualTPS: number = 0;
+
     public static tickLoopPaused = true;
     public static generationLoopStopped = false;
     public static generationLooper: Generator | null = null;
 
+    public static targetTPS: number = 200;
+    private static lastFrameTime: number = 0;
+    private static timeAccumulator: number = 0;
+
+    private static maxTPS: number = 0;
+    private static tickDurations: number[] = [];
+
     public static runLoop(looper: Generator) {
-        function step() {
-            const res = looper.next();
-            if (!res.done) {
-                requestAnimationFrame(step); // Non-blocking
+        function step(currentTime: number) {
+            if (Looper.tickLoopPaused) {
+                Looper.lastFrameTime = currentTime;
+                requestAnimationFrame(step);
+                return;
             }
+
+            // Calculate delta time since last frame
+            const deltaTime = currentTime - Looper.lastFrameTime;
+            Looper.lastFrameTime = currentTime;
+
+            // Add to accumulator
+            Looper.timeAccumulator += deltaTime;
+
+            // Fixed time step (in ms)
+            const timeStep = 1000 / Looper.targetTPS;
+
+            // Run as many ticks as needed to catch up
+            let ticksThisFrame = 0;
+            const maxTicksPerFrame = Math.min(100, Math.ceil(Looper.targetTPS / 30)); // Safety limit
+
+            while (Looper.timeAccumulator >= timeStep && ticksThisFrame < maxTicksPerFrame) {
+                const startTime = performance.now();
+                const res = looper.next();
+                const endTime = performance.now();
+
+                Looper.tickDurations.push(endTime - startTime);
+                if (Looper.tickDurations.length > 500) {
+                    Looper.tickDurations.shift();
+                }
+
+                if (res.done) { return; }
+                Looper.timeAccumulator -= timeStep;
+                ticksThisFrame++;
+                Looper.ticksInLastSecond++;
+            }
+
+            // Update TPS counter once per second
+            const tpsUpdateIntervalMs = 100;
+            if (currentTime - Looper.lastTPSUpdateTime >= tpsUpdateIntervalMs) {
+                Looper.actualTPS = Looper.ticksInLastSecond / (tpsUpdateIntervalMs / 1000);
+                Looper.updateTickSpeedDisplay();
+                Looper.ticksInLastSecond = 0;
+                Looper.lastTPSUpdateTime = currentTime;
+
+                const averageTickDuration = Looper.tickDurations.reduce((a, b) => a + b, 0) / Looper.tickDurations.length;
+                Looper.maxTPS = Math.round(1000 / averageTickDuration);
+                Looper.updateMaxTickSpeedDisplay();
+            }
+
+            requestAnimationFrame(step);
         }
-        step();
+
+        // Initialize and start the loop
+        Looper.lastFrameTime = performance.now();
+        Looper.lastTPSUpdateTime = performance.now();
+        requestAnimationFrame(step);
     }
 
     public static generationCount: number = 0;
@@ -1466,6 +1514,8 @@ class Looper {
             NaturalSelection.generationStart();
 
             if (isRaceMode) { this.generationLoopButton.click(); }
+
+            const startTime = performance.now();
 
             let tickLooper = this.tickLoop();
             let tickResult = tickLooper.next();
@@ -1480,6 +1530,9 @@ class Looper {
                 tickResult = tickLooper.next();
                 yield;
             }
+
+            const endTime = performance.now();
+            console.log(`Generation ${this.generationCount} completed in ${(endTime - startTime).toFixed(2)} ms (${(this.tickCount / ((endTime - startTime) / 1000)).toFixed(2)} TPS)`);
 
             const survivedCars = NaturalSelection.generationEnd();
 
@@ -1512,12 +1565,29 @@ class Looper {
 
     /* ----------------------------------- UI ----------------------------------- */
 
+    private static maxTickSpeedDisplay = document.getElementById('maxTickSpeed') as HTMLSpanElement;
+    private static tickSpeedDisplay = document.getElementById('tickSpeed') as HTMLSpanElement;
+    private static targetTickSpeedInput = document.getElementById('targetTickSpeedInput') as HTMLInputElement;
+
     private static tickLoopButton = document.getElementById('tickLoopButton') as HTMLButtonElement;
     private static generationLoopButton = document.getElementById('generationLoopButton') as HTMLButtonElement;
+
+    private static updateTickSpeedDisplay() {
+        this.tickSpeedDisplay.textContent = this.actualTPS.toString();
+    }
+    private static updateMaxTickSpeedDisplay() {
+        this.maxTickSpeedDisplay.textContent = this.maxTPS.toString();
+    }
 
     /* ---------------------------------- Code ---------------------------------- */
 
     public static init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialTargetTPS = cookie?.targetTPS ?? parseFloat(this.targetTickSpeedInput.value);
+            this.targetTickSpeedInput.value = initialTargetTPS.toString();
+            this.targetTPS = initialTargetTPS;
+        });
+
         this.tickLoopButton.addEventListener('click', () => {
             const firstRun = this.generationLooper === null;
 
@@ -1542,6 +1612,17 @@ class Looper {
             this.generationLoopStopped = true;
             this.generationLoopButton.disabled = true;
         });
+
+        this.targetTickSpeedInput.addEventListener('change', onTargetTickSpeedInputChange);
+
+        function onTargetTickSpeedInputChange() {
+            const newTargetTPS = parseFloat(Looper.targetTickSpeedInput.value);
+            Looper.targetTPS = newTargetTPS;
+
+            if (cookie === null) { cookie = {}; }
+            cookie.targetTPS = newTargetTPS;
+            updateCookie();
+        }
     }
 }
 Looper.init();

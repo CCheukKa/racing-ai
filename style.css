@@ -56,6 +56,11 @@ body {
     }
 }
 
+input:invalid,
+input:user-invalid {
+    background-color: #ff0000a0 !important;
+}
+
 .button {
     border: 1px solid var(--buttonColour);
     color: #ffffff;
@@ -405,8 +410,6 @@ body {
                     width: 100px;
                     text-align: right;
                     padding-right: 5px;
-                    resize: none;
-                    scrollbar-width: thin;
                     background-color: #ffffff20;
                     border: none;
                     color: #ffffff;
@@ -418,11 +421,6 @@ body {
                     &::-webkit-outer-spin-button {
                         -webkit-appearance: none;
                         margin: 0;
-                    }
-
-                    &:invalid,
-                    &:user-invalid {
-                        background-color: #ff0000a0;
                     }
 
                     &[type=checkbox] {
@@ -702,6 +700,41 @@ body {
             background-color: #ffffff20;
             padding: 2px 8px;
             border-radius: 5px;
+        }
+
+        .tickSpeedControls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            flex-grow: 1;
+            width: 100%;
+
+            &>div {
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 5px;
+            }
+
+            input {
+                width: 50px;
+                text-align: right;
+                background-color: #ffffff20;
+                border: none;
+                color: #ffffff;
+                border-radius: 2px;
+                font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
+                font-weight: bold;
+
+                &::-webkit-inner-spin-button,
+                &::-webkit-outer-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+            }
         }
     }
 

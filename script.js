@@ -156,24 +156,13 @@ raceModeButton.addEventListener('click', () => {
         recalculateWhatTextSizes();
     }, 200);
 });
-const tickSpeedDisplay = document.getElementById('tickSpeed');
-const tickDurations = [];
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
 class Stadium {
     static tickDo() {
         NaturalSelection.updateTickCounter();
-        const tickStart = performance.now();
         this.processCars();
-        const tickEnd = performance.now();
-        const tickDuration = tickEnd - tickStart;
-        tickDurations.push(tickDuration);
-        if (tickDurations.length > 100) {
-            tickDurations.shift();
-        }
-        const averageTickDuration = tickDurations.reduce((sum, duration) => sum + duration, 0) / tickDurations.length;
-        tickSpeedDisplay.textContent = `TPS: ${Math.round(1000 / averageTickDuration)}`;
         this.drawCars();
         cars.forEach(this.updateRoadScore);
     }
@@ -1247,13 +1236,54 @@ LeaderBoard.init();
 /* -------------------------------------------------------------------------- */
 class Looper {
     static runLoop(looper) {
-        function step() {
-            const res = looper.next();
-            if (!res.done) {
-                requestAnimationFrame(step); // Non-blocking
+        function step(currentTime) {
+            if (Looper.tickLoopPaused) {
+                Looper.lastFrameTime = currentTime;
+                requestAnimationFrame(step);
+                return;
             }
+            // Calculate delta time since last frame
+            const deltaTime = currentTime - Looper.lastFrameTime;
+            Looper.lastFrameTime = currentTime;
+            // Add to accumulator
+            Looper.timeAccumulator += deltaTime;
+            // Fixed time step (in ms)
+            const timeStep = 1000 / Looper.targetTPS;
+            // Run as many ticks as needed to catch up
+            let ticksThisFrame = 0;
+            const maxTicksPerFrame = Math.min(100, Math.ceil(Looper.targetTPS / 30)); // Safety limit
+            while (Looper.timeAccumulator >= timeStep && ticksThisFrame < maxTicksPerFrame) {
+                const startTime = performance.now();
+                const res = looper.next();
+                const endTime = performance.now();
+                Looper.tickDurations.push(endTime - startTime);
+                if (Looper.tickDurations.length > 500) {
+                    Looper.tickDurations.shift();
+                }
+                if (res.done) {
+                    return;
+                }
+                Looper.timeAccumulator -= timeStep;
+                ticksThisFrame++;
+                Looper.ticksInLastSecond++;
+            }
+            // Update TPS counter once per second
+            const tpsUpdateIntervalMs = 100;
+            if (currentTime - Looper.lastTPSUpdateTime >= tpsUpdateIntervalMs) {
+                Looper.actualTPS = Looper.ticksInLastSecond / (tpsUpdateIntervalMs / 1000);
+                Looper.updateTickSpeedDisplay();
+                Looper.ticksInLastSecond = 0;
+                Looper.lastTPSUpdateTime = currentTime;
+                const averageTickDuration = Looper.tickDurations.reduce((a, b) => a + b, 0) / Looper.tickDurations.length;
+                Looper.maxTPS = Math.round(1000 / averageTickDuration);
+                Looper.updateMaxTickSpeedDisplay();
+            }
+            requestAnimationFrame(step);
         }
-        step();
+        // Initialize and start the loop
+        Looper.lastFrameTime = performance.now();
+        Looper.lastTPSUpdateTime = performance.now();
+        requestAnimationFrame(step);
     }
     static *generationLoop() {
         while (true) {
@@ -1263,6 +1293,7 @@ class Looper {
             if (isRaceMode) {
                 this.generationLoopButton.click();
             }
+            const startTime = performance.now();
             let tickLooper = this.tickLoop();
             let tickResult = tickLooper.next();
             while (!tickResult.done) {
@@ -1276,6 +1307,8 @@ class Looper {
                 tickResult = tickLooper.next();
                 yield;
             }
+            const endTime = performance.now();
+            console.log(`Generation ${this.generationCount} completed in ${(endTime - startTime).toFixed(2)} ms (${(this.tickCount / ((endTime - startTime) / 1000)).toFixed(2)} TPS)`);
             const survivedCars = NaturalSelection.generationEnd();
             if (this.generationLoopStopped) {
                 console.log(`Generation loop stopped at generation ${this.generationCount}`);
@@ -1303,8 +1336,19 @@ class Looper {
             yield;
         }
     }
+    static updateTickSpeedDisplay() {
+        this.tickSpeedDisplay.textContent = this.actualTPS.toString();
+    }
+    static updateMaxTickSpeedDisplay() {
+        this.maxTickSpeedDisplay.textContent = this.maxTPS.toString();
+    }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialTargetTPS = cookie?.targetTPS ?? parseFloat(this.targetTickSpeedInput.value);
+            this.targetTickSpeedInput.value = initialTargetTPS.toString();
+            this.targetTPS = initialTargetTPS;
+        });
         this.tickLoopButton.addEventListener('click', () => {
             const firstRun = this.generationLooper === null;
             if (firstRun) {
@@ -1326,15 +1370,36 @@ class Looper {
             this.generationLoopStopped = true;
             this.generationLoopButton.disabled = true;
         });
+        this.targetTickSpeedInput.addEventListener('change', onTargetTickSpeedInputChange);
+        function onTargetTickSpeedInputChange() {
+            const newTargetTPS = parseFloat(Looper.targetTickSpeedInput.value);
+            Looper.targetTPS = newTargetTPS;
+            if (cookie === null) {
+                cookie = {};
+            }
+            cookie.targetTPS = newTargetTPS;
+            updateCookie();
+        }
     }
 }
 /* ---------------------------------- Logic --------------------------------- */
+Looper.ticksInLastSecond = 0;
+Looper.lastTPSUpdateTime = 0;
+Looper.actualTPS = 0;
 Looper.tickLoopPaused = true;
 Looper.generationLoopStopped = false;
 Looper.generationLooper = null;
+Looper.targetTPS = 200;
+Looper.lastFrameTime = 0;
+Looper.timeAccumulator = 0;
+Looper.maxTPS = 0;
+Looper.tickDurations = [];
 Looper.generationCount = 0;
 Looper.tickCount = 0;
 /* ----------------------------------- UI ----------------------------------- */
+Looper.maxTickSpeedDisplay = document.getElementById('maxTickSpeed');
+Looper.tickSpeedDisplay = document.getElementById('tickSpeed');
+Looper.targetTickSpeedInput = document.getElementById('targetTickSpeedInput');
 Looper.tickLoopButton = document.getElementById('tickLoopButton');
 Looper.generationLoopButton = document.getElementById('generationLoopButton');
 Looper.init();

@@ -241,7 +241,21 @@
                 <label for="raceModeButton">🏁 Race mode?</label>
                 <input type="checkbox" id="raceModeButton">
             </div>
-            <div id="tickSpeed">TPS: 0</div>
+            <div class="tickSpeedControls">
+                <div>
+                    <span>Max TPS (est.): </span>
+                    <span id="maxTickSpeed">0</span>
+                </div>
+                <div>
+                    <span>Current TPS: </span>
+                    <span id="tickSpeed">0</span>
+                </div>
+                <div>
+                    <span>Target TPS: </span>
+                    <input required type="number" id="targetTickSpeedInput" min="100" max="10000" value="200" step="50"
+                        placeholder="200">
+                </div>
+            </div>
         </div>
         <div id="dragPrompt" class="hidden"> Drop car JSON files here to import them </div>
     </div>
