@@ -675,21 +675,29 @@ class NeuralNetwork {
         };
     }
     static redraw() {
-        this.neuralNetworkCtx.clearRect(0, 0, this.neuralNetworkCanvas.width, this.neuralNetworkCanvas.height);
+        const { layerSizes, layerCount, nodeRadius } = _c.redrawNeuralNetwork(this.getInputLayerSize(), this.hiddenLayerSizes);
+        // update layer container
+        this.inputLayerElement.innerHTML = layerSizes[0].toString();
+        this.outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
+        this.inputLayerElement.parentElement.style.marginLeft = `${nodeRadius}px`;
+        this.outputLayerElement.parentElement.style.marginRight = `${nodeRadius}px`;
+    }
+    static redrawNeuralNetwork(inputLayerSize, hiddenLayerSizes, canvas = this.neuralNetworkCanvas, ctx = this.neuralNetworkCtx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         // calculate node positions
-        const layerSizes = [this.getInputLayerSize(), ...this.hiddenLayerSizes, 2];
+        const layerSizes = [inputLayerSize, ...hiddenLayerSizes, 2];
         const layerCount = layerSizes.length;
         const maxLayerSize = Math.max(...layerSizes);
-        const nodeRadius = Math.min(this.neuralNetworkCanvas.height / maxLayerSize / 2 - 2, this.neuralNetworkCanvas.width / layerCount / 2 - 3);
-        const nodeHeight = this.neuralNetworkCanvas.height / maxLayerSize;
-        const layerWidth = (this.neuralNetworkCanvas.width - nodeRadius * 2) / (layerCount - 1);
+        const nodeRadius = Math.min(canvas.height / maxLayerSize / 2 - 2, canvas.width / layerCount / 2 - 3);
+        const nodeHeight = canvas.height / maxLayerSize;
+        const layerWidth = (canvas.width - nodeRadius * 2) / (layerCount - 1);
         const nodePositions = [];
         for (let i = 0; i < layerCount; i++) {
             const layerSize = layerSizes[i];
             const layerX = nodeRadius + i * layerWidth;
             nodePositions[i] = [];
             const totalNodesHeight = layerSize * nodeHeight;
-            const verticalOffset = (this.neuralNetworkCanvas.height - totalNodesHeight) / 2;
+            const verticalOffset = (canvas.height - totalNodesHeight) / 2;
             for (let j = 0; j < layerSize; j++) {
                 const nodeY = verticalOffset + j * nodeHeight + nodeHeight / 2;
                 nodePositions[i].push({ x: layerX, y: nodeY });
@@ -705,7 +713,7 @@ class NeuralNetwork {
                 const { x: x1, y: y1 } = nodePositions[i][j];
                 for (let k = 0; k < nextLayerSize; k++) {
                     const { x: x2, y: y2 } = nodePositions[i + 1][k];
-                    drawLine(this.neuralNetworkCtx, x1, y1, x2, y2, 1, '#ffffff40');
+                    drawLine(ctx, x1, y1, x2, y2, 1, '#ffffff40');
                 }
             }
         });
@@ -716,13 +724,13 @@ class NeuralNetwork {
                 const { x, y } = nodePositions[i][j];
                 if (i === 0 || i === layerCount - 1) {
                     const colour = i === 0 ? Garage.GARAGE_CAR_COLOUR : Stadium.TRACK_COLOUR;
-                    drawCircle(this.neuralNetworkCtx, x, y, nodeRadius, colour);
+                    drawCircle(ctx, x, y, nodeRadius, colour);
                 }
                 else {
-                    this.neuralNetworkCtx.globalCompositeOperation = 'destination-out';
-                    drawCircle(this.neuralNetworkCtx, x, y, nodeRadius, '#ffffff');
-                    this.neuralNetworkCtx.globalCompositeOperation = 'source-over'; // Reset to default
-                    drawCircle(this.neuralNetworkCtx, x, y, nodeRadius, '#ffffff', true);
+                    ctx.globalCompositeOperation = 'destination-out';
+                    drawCircle(ctx, x, y, nodeRadius, '#ffffff');
+                    ctx.globalCompositeOperation = 'source-over'; // Reset to default
+                    drawCircle(ctx, x, y, nodeRadius, '#ffffff', true);
                 }
             }
         }
@@ -731,16 +739,12 @@ class NeuralNetwork {
         if (this.options.probeDistances.value) {
             for (let i = 0; i < Garage.probeAngles.length; i++) {
                 const { x, y } = nodePositions[0][i];
-                drawText(this.neuralNetworkCtx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
+                drawText(ctx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
             }
         }
-        drawText(this.neuralNetworkCtx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
-        drawText(this.neuralNetworkCtx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
-        // update layer container
-        this.inputLayerElement.innerHTML = layerSizes[0].toString();
-        this.outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
-        this.inputLayerElement.parentElement.style.marginLeft = `${nodeRadius}px`;
-        this.outputLayerElement.parentElement.style.marginRight = `${nodeRadius}px`;
+        drawText(ctx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        drawText(ctx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        return { layerSizes, layerCount, nodeRadius };
     }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
@@ -1105,9 +1109,10 @@ class LeaderBoard {
             `Generation: ${carData.generation}`,
             `Probe Angles: ${carData.probeAngles.map(angle => (angle * 180 / Math.PI).toFixed(2)).join(', ')}`,
             `Inputs: ${carInputs.join(', ')}`,
-            `Network Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`,
         ];
-        _d.carPeeker.innerHTML = content.join('<br>');
+        this.carPeekerTextContentElement.innerHTML = content.join('<br>');
+        NeuralNetwork.redrawNeuralNetwork(carData.network.inputNodes, carData.network.layers.map(layer => layer.nodes.length).slice(0, -1), this.carPeekerNeuralNetworkCanvas, this.carPeekerNeuralNetworkCtx);
+        this.carPeekerNeuralNetworkLayers.innerHTML = `Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`;
     }
     static getSelectedLeaderboardEntryIndex(event) {
         if (!event) {
@@ -1133,6 +1138,10 @@ class LeaderBoard {
     }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.carPeekerNeuralNetworkCanvas.width = this.CAR_PEEKER_NEURAL_NETWORK_WIDTH;
+            this.carPeekerNeuralNetworkCanvas.height = this.CAR_PEEKER_NEURAL_NETWORK_HEIGHT;
+        });
         this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
         this.leaderboardElement.addEventListener('click', (event) => {
             this.updatePeeker(event);
@@ -1169,7 +1178,13 @@ LeaderBoard.leaderboardElement = document.getElementById('leaderboard');
 LeaderBoard.leaderboardEntryTemplate = document.getElementById('leaderboardEntryTemplate');
 LeaderBoard.LEADERBOARD_MAX_ENTRIES = 100;
 LeaderBoard.leaderboard = [];
+LeaderBoard.CAR_PEEKER_NEURAL_NETWORK_WIDTH = 200;
+LeaderBoard.CAR_PEEKER_NEURAL_NETWORK_HEIGHT = 100;
 LeaderBoard.carPeeker = document.getElementById('carPeeker');
+LeaderBoard.carPeekerTextContentElement = document.getElementById('carPeekerTextContent');
+LeaderBoard.carPeekerNeuralNetworkCanvas = document.getElementById('carPeekerNeuralNetwork');
+LeaderBoard.carPeekerNeuralNetworkCtx = _d.carPeekerNeuralNetworkCanvas.getContext('2d');
+LeaderBoard.carPeekerNeuralNetworkLayers = document.getElementById('carPeekerNeuralNetworkLayers');
 /* ----------------------------------- UI ----------------------------------- */
 LeaderBoard.selectedCarData = null;
 LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');
