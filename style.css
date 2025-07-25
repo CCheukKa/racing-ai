@@ -638,5 +638,30 @@ body {
         #resetSettingsButton {
             --buttonColour: #ff8888;
         }
+
+        #importCar {
+            --buttonColour: #8888ff;
+        }
+    }
+
+    &>#dragPrompt {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 99;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        pointer-events: none;
     }
 }

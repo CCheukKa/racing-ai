@@ -62,6 +62,89 @@ resetSettingsButton.addEventListener('click', () => {
     location.reload();
 });
 
+const importCarButton = document.getElementById('importCar') as HTMLButtonElement;
+importCarButton.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.multiple = true;
+    input.onchange = (event) => {
+        const files = (event.target as HTMLInputElement).files;
+        if (!files || files.length === 0) return;
+        importCarFiles(files);
+    };
+    input.click();
+    input.remove();
+});
+const dragPrompt = document.getElementById('dragPrompt') as HTMLDivElement;
+document.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer!.dropEffect = 'copy';
+    dragPrompt.classList.remove('hidden');
+});
+document.addEventListener('blur', () => {
+    dragPrompt.classList.add('hidden');
+});
+document.addEventListener('dragleave', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.relatedTarget === null) {
+        dragPrompt.classList.add('hidden');
+    }
+});
+document.addEventListener('drop', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    importCarFiles(files);
+    dragPrompt.classList.add('hidden');
+});
+function importCarFiles(files: FileList | File[]) {
+    const jsonFiles = Array.from(files).filter(file =>
+        file.type === 'application/json' || file.name.endsWith('.json')
+    );
+    if (jsonFiles.length === 0) {
+        alert('Failed to import car(s). Please ensure the file(s) are valid JSON car data files.');
+        return;
+    }
+
+    const readers = jsonFiles.map(file => new Promise<{ hash: string, data: SerialisedCarData }>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data: SerialisedCarData = JSON.parse(e.target?.result as string);
+                const hash = data.hash || 'Failed to get hash';
+                resolve({ hash, data });
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+    }));
+
+    Promise.all(readers).then(results => {
+        if (results.length > 1) {
+            const hashes = results.map(car => car.hash).join('\n');
+            if (!confirm(`Are you sure you want to import all ${results.length} cars?\n\nHashes:\n${hashes}`)) return;
+        }
+        results.forEach(({ hash, data }) => {
+            if (results.length === 1) {
+                if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash}`)) return;
+            }
+            const car = Cars.deserialiseCarData(data);
+            cars.push(car);
+            Stadium.drawCars();
+            console.log('Car imported:', car);
+        });
+    }).catch(error => {
+        alert('Failed to import car(s). Please ensure the file(s) are valid JSON car data files.');
+        console.error('Failed to import car(s):', error);
+    });
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
@@ -133,7 +216,7 @@ class Stadium {
         drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, '#ffffff', true); // Cursor
     }
 
-    private static drawCars() {
+    public static drawCars() {
         this.carCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
         this.carCtx.save();
 
