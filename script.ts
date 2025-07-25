@@ -112,13 +112,13 @@ function importCarFiles(files: FileList | File[]) {
         return;
     }
 
-    const readers = jsonFiles.map(file => new Promise<{ hash: string, data: SerialisedCarData }>((resolve, reject) => {
+    const readers = jsonFiles.map(file => new Promise<{ hash: string, carData: SerialisedCarData }>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data: SerialisedCarData = JSON.parse(e.target?.result as string);
                 const hash = data.hash || 'Failed to get hash';
-                resolve({ hash, data });
+                resolve({ hash, carData: data });
             } catch (error) {
                 reject(error);
             }
@@ -129,12 +129,12 @@ function importCarFiles(files: FileList | File[]) {
 
     Promise.all(readers).then(results => {
         if (results.length > 1) {
-            const hashes = results.map(car => car.hash).join('\n');
+            const hashes = results.map(({ hash, carData }) => hash + (carData.name ? ` (${carData.name})` : '')).join('\n');
             if (!confirm(`Are you sure you want to import all ${results.length} cars?\n\nHashes:\n${hashes}`)) return;
         }
-        results.forEach(({ hash, data: carData }) => {
+        results.forEach(({ hash, carData }) => {
             if (results.length === 1) {
-                if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash}`)) return;
+                if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash + (carData.name ? ` (${carData.name})` : '')}`)) return;
             }
             const car = Cars.deserialiseCarData(carData);
             cars.push(car);
@@ -466,6 +466,7 @@ class Cars {
     public static serialiseCarData(car: Car, generation: number, ticksInGeneration: number): SerialisedCarData {
         const probeAngles = car.probes.map(probe => probe.angle);
         return {
+            name: car.name,
             colour: car.colour,
             probeAngles: probeAngles,
             lapCount: car.lapCount,
@@ -482,6 +483,7 @@ class Cars {
         const car = new Car(undefined, undefined, carData.probeAngles);
         const network = new Network([NeuralNetwork.getInputLayerSize(), ...NeuralNetwork.hiddenLayerSizes, 2]);
         network.layers = carData.network.layers;
+        car.name = carData.name;
         car.lapCount = carData.lapCount;
         car.score = carData.score;
         car.network = network;
@@ -506,6 +508,7 @@ class Probe {
 }
 class Car {
     public colour: string;
+    public name?: string;
 
     public x: number;
     public y: number;
@@ -600,6 +603,7 @@ class Car {
     }
 }
 type SerialisedCarData = {
+    name?: string;
     colour: string;
     probeAngles: number[];
     generation: number;
@@ -1285,7 +1289,7 @@ class LeaderBoard {
         const { index } = this.getSelectedLeaderboardEntryIndex(event);
 
         if (index !== null && this.leaderboard[index]) {
-            this.updateCarPeekerContent(this.leaderboard[index], index + 1);
+            this.updateCarPeekerContent(this.leaderboard[index]);
             if (event) {
                 const rect = this.leaderboardElement.getBoundingClientRect();
                 const x = event.clientX - rect.left;
@@ -1304,7 +1308,7 @@ class LeaderBoard {
         this.carPeeker.classList.add('hidden');
         return;
     };
-    private static updateCarPeekerContent(carData: SerialisedCarData, rank: number) {
+    private static updateCarPeekerContent(carData: SerialisedCarData) {
         LeaderBoard.carPeeker.style.setProperty('--carColour', carData.colour);
 
         const carInputs: string[] = [];
@@ -1314,9 +1318,10 @@ class LeaderBoard {
             }
         }
 
-        const content = [
+        const content: string[] = [
+            // @ts-ignore
+            carData.name ? `Name: ${carData.name}` : null,
             `Hash: ${carData.hash.slice(0, 8)}...`,
-            `Rank: ${rank}`,
             `Score: ${carData.score.toFixed(2)}`,
             `Lap: ${carData.lapCount.toFixed(2)}`,
             `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
@@ -1327,7 +1332,7 @@ class LeaderBoard {
                 &nbsp;&nbsp;&nbsp;&nbsp;${carInputs.join(',<br>&nbsp;&nbsp;&nbsp;&nbsp;')}
             <br>
             ]`,
-        ];
+        ].filter(string => string !== null);
         this.carPeekerTextContentElement.innerHTML = content.join('<br>');
 
         NeuralNetwork.redrawNeuralNetwork(
@@ -1405,11 +1410,13 @@ class LeaderBoard {
                 alert('Please select a car from the leaderboard first.');
                 return;
             }
+            const name = this.selectedCarData.name || prompt('Enter a name for the car (optional):');
+            if (name !== null) { this.selectedCarData.name = name; }
             const blob = new Blob([JSON.stringify(this.selectedCarData, null, 4)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `car_${this.selectedCarData.hash}.json`;
+            a.download = `car${name ? `_${name}` : ''}_${this.selectedCarData.hash}.json`;
             a.click();
             URL.revokeObjectURL(url);
         });

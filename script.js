@@ -113,7 +113,7 @@ function importCarFiles(files) {
             try {
                 const data = JSON.parse(e.target?.result);
                 const hash = data.hash || 'Failed to get hash';
-                resolve({ hash, data });
+                resolve({ hash, carData: data });
             }
             catch (error) {
                 reject(error);
@@ -124,13 +124,13 @@ function importCarFiles(files) {
     }));
     Promise.all(readers).then(results => {
         if (results.length > 1) {
-            const hashes = results.map(car => car.hash).join('\n');
+            const hashes = results.map(({ hash, carData }) => hash + (carData.name ? ` (${carData.name})` : '')).join('\n');
             if (!confirm(`Are you sure you want to import all ${results.length} cars?\n\nHashes:\n${hashes}`))
                 return;
         }
-        results.forEach(({ hash, data: carData }) => {
+        results.forEach(({ hash, carData }) => {
             if (results.length === 1) {
-                if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash}`))
+                if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash + (carData.name ? ` (${carData.name})` : '')}`))
                     return;
             }
             const car = Cars.deserialiseCarData(carData);
@@ -422,6 +422,7 @@ class Cars {
     static serialiseCarData(car, generation, ticksInGeneration) {
         const probeAngles = car.probes.map(probe => probe.angle);
         return {
+            name: car.name,
             colour: car.colour,
             probeAngles: probeAngles,
             lapCount: car.lapCount,
@@ -438,6 +439,7 @@ class Cars {
         const car = new Car(undefined, undefined, carData.probeAngles);
         const network = new Network([NeuralNetwork.getInputLayerSize(), ...NeuralNetwork.hiddenLayerSizes, 2]);
         network.layers = carData.network.layers;
+        car.name = carData.name;
         car.lapCount = carData.lapCount;
         car.score = carData.score;
         car.network = network;
@@ -1094,7 +1096,7 @@ class LeaderBoard {
             this.leaderboardElement.appendChild(entryElement);
         });
     }
-    static updateCarPeekerContent(carData, rank) {
+    static updateCarPeekerContent(carData) {
         _d.carPeeker.style.setProperty('--carColour', carData.colour);
         const carInputs = [];
         for (const option in carData.inputLayerOptions) {
@@ -1103,8 +1105,9 @@ class LeaderBoard {
             }
         }
         const content = [
+            // @ts-ignore
+            carData.name ? `Name: ${carData.name}` : null,
             `Hash: ${carData.hash.slice(0, 8)}...`,
-            `Rank: ${rank}`,
             `Score: ${carData.score.toFixed(2)}`,
             `Lap: ${carData.lapCount.toFixed(2)}`,
             `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
@@ -1115,7 +1118,7 @@ class LeaderBoard {
                 &nbsp;&nbsp;&nbsp;&nbsp;${carInputs.join(',<br>&nbsp;&nbsp;&nbsp;&nbsp;')}
             <br>
             ]`,
-        ];
+        ].filter(string => string !== null);
         this.carPeekerTextContentElement.innerHTML = content.join('<br>');
         NeuralNetwork.redrawNeuralNetwork(carData.network.inputNodes, carData.network.layers.map(layer => layer.nodes.length).slice(0, -1), carData.probeAngles, carData.colour, this.carPeekerNeuralNetworkCanvas, this.carPeekerNeuralNetworkCtx);
         this.carPeekerNeuralNetworkLayers.innerHTML = `Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`;
@@ -1172,11 +1175,15 @@ class LeaderBoard {
                 alert('Please select a car from the leaderboard first.');
                 return;
             }
+            const name = this.selectedCarData.name || prompt('Enter a name for the car (optional):');
+            if (name !== null) {
+                this.selectedCarData.name = name;
+            }
             const blob = new Blob([JSON.stringify(this.selectedCarData, null, 4)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `car_${this.selectedCarData.hash}.json`;
+            a.download = `car${name ? `_${name}` : ''}_${this.selectedCarData.hash}.json`;
             a.click();
             URL.revokeObjectURL(url);
         });
@@ -1207,7 +1214,7 @@ LeaderBoard.exportSelectedCarButton = document.getElementById('exportSelectedCar
 LeaderBoard.updatePeeker = (event) => {
     const { index } = _d.getSelectedLeaderboardEntryIndex(event);
     if (index !== null && _d.leaderboard[index]) {
-        _d.updateCarPeekerContent(_d.leaderboard[index], index + 1);
+        _d.updateCarPeekerContent(_d.leaderboard[index]);
         if (event) {
             const rect = _d.leaderboardElement.getBoundingClientRect();
             const x = event.clientX - rect.left;
