@@ -30,6 +30,28 @@ function onLayoutChange() {
     mainContainer.style.zoom = zoomFactor.toString();
 }
 let cars = [];
+var cookie = null;
+const COOKIE_ROOT_NAME = 'cck-wtf-racing-ai';
+var Cookies; //! Assuming Cookies is a global object from js-cookie library
+try {
+    cookie = JSON.parse(Cookies.get(COOKIE_ROOT_NAME));
+}
+catch (e) {
+    console.log(e);
+}
+if (cookie) {
+    console.log('Cookie fetched:', cookie);
+}
+else {
+    console.log('No cookie');
+    cookie = {};
+}
+function updateCookie() {
+    if (cookie === null) {
+        return;
+    }
+    Cookies.set(COOKIE_ROOT_NAME, JSON.stringify(cookie));
+}
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
@@ -408,6 +430,11 @@ class Garage {
             .filter(angle => !isNaN(angle));
         this.redraw();
         NeuralNetwork.redraw();
+        if (cookie === null) {
+            cookie = {};
+        }
+        cookie.probeAngles = this.probeAngles.map(angle => angle * (180 / Math.PI));
+        updateCookie();
     }
     static redraw() {
         this.garageCtx.clearRect(0, 0, this.garageCanvas.width, this.garageCanvas.height);
@@ -430,7 +457,9 @@ class Garage {
         this.garageCanvas.height = 300;
         lockableElements.push(this.probeAnglesInput);
         document.addEventListener('DOMContentLoaded', () => {
-            this.redraw();
+            if (cookie?.probeAngles) {
+                this.probeAnglesInput.value = cookie.probeAngles.join('\n');
+            }
             this.onProbeAnglesInput();
         });
         this.probeAnglesInput.addEventListener('input', () => {
@@ -610,6 +639,21 @@ class NeuralNetwork {
         this.neuralNetworkCanvas.height = 220;
         lockableElements.push(this.hiddenLayerInput);
         document.addEventListener('DOMContentLoaded', () => {
+            if (cookie?.hiddenLayerSizes) {
+                const cookieHiddenLayerSizes = cookie.hiddenLayerSizes;
+                this.hiddenLayerInput.value = cookieHiddenLayerSizes.join(' ');
+                this.hiddenLayerSizes = cookieHiddenLayerSizes;
+            }
+            if (cookie?.inputLayerOptions) {
+                const cookieInputLayerOptions = cookie.inputLayerOptions;
+                Object.keys(this.options).forEach((key) => {
+                    const typedKey = key;
+                    if (cookieInputLayerOptions[typedKey] !== undefined) {
+                        this.options[typedKey].value = cookieInputLayerOptions[typedKey];
+                        this.options[typedKey].element.checked = cookieInputLayerOptions[typedKey];
+                    }
+                });
+            }
             Object.keys(this.options).forEach((key) => {
                 const typedKey = key;
                 const inputOption = this.options[typedKey];
@@ -625,6 +669,11 @@ class NeuralNetwork {
                     }
                     inputOption.value = inputOption.element.checked;
                     _c.redraw();
+                    if (cookie === null) {
+                        cookie = {};
+                    }
+                    cookie.inputLayerOptions = _c.serialiseInputLayerOptions();
+                    updateCookie();
                 }
             });
             this.redraw();
@@ -642,6 +691,11 @@ class NeuralNetwork {
             }
             this.hiddenLayerSizes = newHiddenLayerSizes;
             this.redraw();
+            if (cookie === null) {
+                cookie = {};
+            }
+            cookie.hiddenLayerSizes = this.hiddenLayerSizes;
+            updateCookie();
         });
     }
 }
@@ -826,6 +880,17 @@ class NaturalSelection {
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
         document.addEventListener('DOMContentLoaded', () => {
+            if (cookie?.naturalSelectionOptions) {
+                const cookieOptions = cookie.naturalSelectionOptions;
+                Object.keys(this.options).forEach((key) => {
+                    const typedKey = key;
+                    if (cookieOptions[typedKey] !== undefined) {
+                        this.options[typedKey].value = cookieOptions[typedKey];
+                        this.options[typedKey].element.value = cookieOptions[typedKey].toString();
+                        this.options[typedKey].element.checked = !!cookieOptions[typedKey];
+                    }
+                });
+            }
             Object.keys(this.options).forEach((key) => {
                 const typedKey = key;
                 const inputOption = this.options[typedKey];
@@ -845,6 +910,19 @@ class NaturalSelection {
                         inputOption.value = inputOption.element.checked;
                     }
                     NaturalSelection.updateTickCounter();
+                    if (cookie === null) {
+                        cookie = {};
+                    }
+                    const serialisedOptions = {
+                        tickLimit: NaturalSelection.options.tickLimit.value,
+                        populationSize: NaturalSelection.options.populationSize.value,
+                        survivalHarshness: NaturalSelection.options.survivalHarshness.value,
+                        reproductionHarshness: NaturalSelection.options.reproductionHarshness.value,
+                        mutationRate: NaturalSelection.options.mutationRate.value,
+                        parentShouldMutate: NaturalSelection.options.parentShouldMutate.value,
+                    };
+                    cookie.naturalSelectionOptions = serialisedOptions;
+                    updateCookie();
                 }
             });
             this.updateTickCounter();

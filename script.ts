@@ -32,6 +32,27 @@ function onLayoutChange() {
 
 let cars: Car[] = [];
 
+type Cookie = {
+    probeAngles?: number[];
+    inputLayerOptions?: SerialisedInputLayerOptions;
+    hiddenLayerSizes?: number[];
+    naturalSelectionOptions?: SerialisedNaturalSelectionOptions;
+};
+var cookie: Cookie | null = null;
+const COOKIE_ROOT_NAME = 'cck-wtf-racing-ai';
+var Cookies: any; //! Assuming Cookies is a global object from js-cookie library
+try { cookie = JSON.parse(Cookies.get(COOKIE_ROOT_NAME)) as Cookie; } catch (e) { console.log(e); }
+if (cookie) {
+    console.log('Cookie fetched:', cookie);
+} else {
+    console.log('No cookie');
+    cookie = {};
+}
+function updateCookie() {
+    if (cookie === null) { return; }
+    Cookies.set(COOKIE_ROOT_NAME, JSON.stringify(cookie));
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
@@ -497,8 +518,11 @@ class Garage {
             .filter(angle => !isNaN(angle));
         this.redraw();
         NeuralNetwork.redraw();
-    }
 
+        if (cookie === null) { cookie = {}; }
+        cookie.probeAngles = this.probeAngles.map(angle => angle * (180 / Math.PI));
+        updateCookie();
+    }
 
     private static redraw() {
         this.garageCtx.clearRect(0, 0, this.garageCanvas.width, this.garageCanvas.height);
@@ -530,7 +554,9 @@ class Garage {
         lockableElements.push(this.probeAnglesInput);
 
         document.addEventListener('DOMContentLoaded', () => {
-            this.redraw();
+            if (cookie?.probeAngles) {
+                this.probeAnglesInput.value = cookie.probeAngles.join('\n');
+            }
             this.onProbeAnglesInput();
         });
         this.probeAnglesInput.addEventListener('input', () => {
@@ -719,8 +745,26 @@ class NeuralNetwork {
         lockableElements.push(this.hiddenLayerInput);
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (cookie?.hiddenLayerSizes) {
+                const cookieHiddenLayerSizes = cookie.hiddenLayerSizes;
+
+                this.hiddenLayerInput.value = cookieHiddenLayerSizes.join(' ');
+                this.hiddenLayerSizes = cookieHiddenLayerSizes;
+            }
+
+            if (cookie?.inputLayerOptions) {
+                const cookieInputLayerOptions = cookie.inputLayerOptions as SerialisedInputLayerOptions;
+                Object.keys(this.options).forEach((key) => {
+                    const typedKey = key as keyof typeof NeuralNetwork.options;
+                    if (cookieInputLayerOptions[typedKey] !== undefined) {
+                        this.options[typedKey].value = cookieInputLayerOptions[typedKey];
+                        this.options[typedKey].element.checked = cookieInputLayerOptions[typedKey];
+                    }
+                });
+            }
+
             Object.keys(this.options).forEach((key) => {
-                const typedKey = key as keyof typeof this.options;
+                const typedKey = key as keyof typeof NeuralNetwork.options;
                 const inputOption = this.options[typedKey];
                 if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
                 lockableElements.push(inputOption.element);
@@ -732,6 +776,10 @@ class NeuralNetwork {
                     if (areInputsLocked) { return; }
                     inputOption.value = inputOption.element.checked;
                     NeuralNetwork.redraw();
+
+                    if (cookie === null) { cookie = {}; }
+                    cookie.inputLayerOptions = NeuralNetwork.serialiseInputLayerOptions();
+                    updateCookie();
                 }
             });
 
@@ -748,6 +796,10 @@ class NeuralNetwork {
             }
             this.hiddenLayerSizes = newHiddenLayerSizes;
             this.redraw();
+
+            if (cookie === null) { cookie = {}; }
+            cookie.hiddenLayerSizes = this.hiddenLayerSizes;
+            updateCookie();
         });
     }
 }
@@ -934,7 +986,7 @@ class NaturalSelection {
 
     private static tickCounter = document.getElementById('tickCounter') as HTMLDivElement;
 
-    public static options: NaturalSelectionInputOptions = {
+    public static options: NaturalSelectionOptions = {
         tickLimit: { element: document.getElementById('tickLimit') as HTMLInputElement, value: NaN },
         populationSize: { element: document.getElementById('populationSize') as HTMLInputElement, value: NaN },
         survivalHarshness: { element: document.getElementById('survivalHarshness') as HTMLInputElement, value: NaN },
@@ -972,8 +1024,20 @@ class NaturalSelection {
 
     public static init() {
         document.addEventListener('DOMContentLoaded', () => {
+            if (cookie?.naturalSelectionOptions) {
+                const cookieOptions = cookie.naturalSelectionOptions as SerialisedNaturalSelectionOptions;
+                Object.keys(this.options).forEach((key) => {
+                    const typedKey = key as keyof typeof NaturalSelection.options;
+                    if (cookieOptions[typedKey] !== undefined) {
+                        this.options[typedKey].value = cookieOptions[typedKey];
+                        this.options[typedKey].element.value = cookieOptions[typedKey].toString();
+                        this.options[typedKey].element.checked = !!cookieOptions[typedKey];
+                    }
+                });
+            }
+
             Object.keys(this.options).forEach((key) => {
-                const typedKey = key as keyof typeof this.options;
+                const typedKey = key as keyof typeof NaturalSelection.options;
                 const inputOption = this.options[typedKey];
                 if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
 
@@ -988,13 +1052,33 @@ class NaturalSelection {
                         inputOption.value = inputOption.element.checked;
                     }
                     NaturalSelection.updateTickCounter();
+
+                    if (cookie === null) { cookie = {}; }
+                    const serialisedOptions: SerialisedNaturalSelectionOptions = {
+                        tickLimit: NaturalSelection.options.tickLimit.value,
+                        populationSize: NaturalSelection.options.populationSize.value,
+                        survivalHarshness: NaturalSelection.options.survivalHarshness.value,
+                        reproductionHarshness: NaturalSelection.options.reproductionHarshness.value,
+                        mutationRate: NaturalSelection.options.mutationRate.value,
+                        parentShouldMutate: NaturalSelection.options.parentShouldMutate.value,
+                    };
+                    cookie.naturalSelectionOptions = serialisedOptions;
+                    updateCookie();
                 }
             });
             this.updateTickCounter();
         });
     }
 }
-type NaturalSelectionInputOptions = {
+type SerialisedNaturalSelectionOptions = {
+    tickLimit: number,
+    populationSize: number,
+    survivalHarshness: number,
+    reproductionHarshness: number,
+    mutationRate: number,
+    parentShouldMutate: boolean,
+};
+type NaturalSelectionOptions = {
     tickLimit: { element: HTMLInputElement, value: number },
     populationSize: { element: HTMLInputElement, value: number },
     survivalHarshness: { element: HTMLInputElement, value: number },
