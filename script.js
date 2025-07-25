@@ -968,7 +968,7 @@ class NaturalSelection {
                 console.log(`===== Reproducing: rank ${car.rank}, score ${car.score}, hash ${car.network.getHash()} =====`);
                 const newCar = car.clone();
                 newCar.network.mutate();
-                newCar.colour = mutateColour(car.colour, 15);
+                newCar.colour = mutateColour(car.colour, 20);
                 newCars.push(newCar);
             }
         }
