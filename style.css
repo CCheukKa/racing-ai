@@ -665,3 +665,24 @@ body {
         pointer-events: none;
     }
 }
+
+@keyframes focusHighlight {
+    0% {
+        box-shadow: 0 0 0 0px #ffeb3b80, 0 0 10px 2px #ffeb3b80;
+        outline: 2px solid #ffeb3b;
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px #ffeb3b40, 0 0 20px 6px #ffeb3b80;
+        outline: 2px solid #ffeb3b;
+    }
+
+    100% {
+        box-shadow: none;
+        outline: none;
+    }
+}
+
+.focus-animate {
+    animation: focusHighlight 1s ease-out;
+}
