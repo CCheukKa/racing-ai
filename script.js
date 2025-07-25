@@ -156,13 +156,24 @@ raceModeButton.addEventListener('click', () => {
         recalculateWhatTextSizes();
     }, 200);
 });
+const tickSpeedDisplay = document.getElementById('tickSpeed');
+const tickDurations = [];
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */
 class Stadium {
     static tickDo() {
         NaturalSelection.updateTickCounter();
+        const tickStart = performance.now();
         this.processCars();
+        const tickEnd = performance.now();
+        const tickDuration = tickEnd - tickStart;
+        tickDurations.push(tickDuration);
+        if (tickDurations.length > 100) {
+            tickDurations.shift();
+        }
+        const averageTickDuration = tickDurations.reduce((sum, duration) => sum + duration, 0) / tickDurations.length;
+        tickSpeedDisplay.textContent = `TPS: ${Math.round(1000 / averageTickDuration)}`;
         this.drawCars();
         cars.forEach(this.updateRoadScore);
     }
@@ -220,7 +231,7 @@ class Stadium {
         const cosAngle = Math.cos(car.angle + angle);
         const sinAngle = Math.sin(car.angle + angle);
         const maxDistance = 200;
-        const stepSize = 10;
+        const stepSize = 1;
         for (let distance = 0; distance < maxDistance; distance += stepSize) {
             const rayEnd = {
                 x: rayOrigin.x + cosAngle * distance,
