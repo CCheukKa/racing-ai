@@ -241,6 +241,28 @@
                 <label for="raceModeButton">🏁 Race mode?</label>
                 <input type="checkbox" id="raceModeButton">
             </div>
+            <div class="scoring">
+                <b>Road Score:</b>
+                Every tick,
+                <br>
+                onTrack ⇒ +0.2, offTrack ⇒ -5
+                <br>
+                speed[-1,0,1,5] ⇒ [-3,-2,+1,+4]
+                <br>
+                <br>
+
+                <b>Performance Score:</b>
+                At the end,
+                <br>
+                lap (clockwise) ⇒ +100×(onTrack%)²
+                <br>
+                averageSpeed[0,1] ⇒ [-100,+100]
+                <br>
+                <br>
+
+                <b>Total Score:</b>
+                Road Score + Performance Score
+            </div>
             <div class="tickSpeedControls">
                 <div>
                     <span>Max TPS (est.): </span>
