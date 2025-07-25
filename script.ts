@@ -1086,9 +1086,8 @@ class LeaderBoard {
         this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
         this.leaderboardElement.addEventListener('click', (event) => { this.updatePeeker(event); });
 
-        //FIXME: doesn't capture the scroll event??
         this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
-        this.leaderboardElement.addEventListener('mouseleave', (event) => { this.carPeeker.classList.add('hidden'); });
+        this.leaderboardElement.addEventListener('mouseleave', () => { this.carPeeker.classList.add('hidden'); });
 
         this.resetLeaderboardButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to reset the leaderboard?')) { return; }
