@@ -1133,9 +1133,7 @@ class LeaderBoard {
     }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
-        this.leaderboardElement.addEventListener('mousemove', (event) => {
-            this.updatePeeker(event);
-        });
+        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
         this.leaderboardElement.addEventListener('click', (event) => {
             this.updatePeeker(event);
             this.selectCar(event);

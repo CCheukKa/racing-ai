@@ -632,6 +632,7 @@ body {
         }
 
         #carPeeker {
+            transition: none;
             z-index: 99;
             pointer-events: none;
             position: absolute;
