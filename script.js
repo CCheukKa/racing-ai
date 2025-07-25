@@ -816,7 +816,7 @@ class NaturalSelection {
     }
     static updateTickCounter() {
         this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
-        this.tickCounter.style.setProperty('--progress', `${(Looper.tickCount / NaturalSelection.options.tickLimit.value) * 100}%`);
+        this.tickCounter.style.setProperty('--progress', `${clamp(Looper.tickCount / NaturalSelection.options.tickLimit.value, 0, 1) * 100}%`);
     }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
