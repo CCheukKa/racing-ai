@@ -544,7 +544,7 @@ class Garage {
         if (cookie === null) {
             cookie = {};
         }
-        cookie.probeAngles = this.probeAngles.map(angle => angle * (180 / Math.PI));
+        cookie.probeAngles = this.probeAngles.map(angle => Math.round(angle * (180 / Math.PI) * 100000) / 100000);
         updateCookie();
     }
     static redraw() {
