@@ -47,11 +47,18 @@ else {
     cookie = {};
 }
 function updateCookie() {
-    if (cookie === null) {
-        return;
-    }
     Cookies.set(COOKIE_ROOT_NAME, JSON.stringify(cookie));
 }
+/* ------------------------------ Miscellaneous ----------------------------- */
+const resetSettingsButton = document.getElementById('resetSettingsButton');
+resetSettingsButton.addEventListener('click', () => {
+    if (!confirm('Are you sure you want to reset all settings? This will also refresh the page.')) {
+        return;
+    }
+    cookie = null;
+    updateCookie();
+    location.reload();
+});
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
 /* -------------------------------------------------------------------------- */

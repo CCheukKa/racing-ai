@@ -32,6 +32,7 @@ function onLayoutChange() {
 
 let cars: Car[] = [];
 
+/* --------------------------------- Cookie --------------------------------- */
 type Cookie = {
     probeAngles?: number[];
     inputLayerOptions?: SerialisedInputLayerOptions;
@@ -49,9 +50,17 @@ if (cookie) {
     cookie = {};
 }
 function updateCookie() {
-    if (cookie === null) { return; }
     Cookies.set(COOKIE_ROOT_NAME, JSON.stringify(cookie));
 }
+
+/* ------------------------------ Miscellaneous ----------------------------- */
+const resetSettingsButton = document.getElementById('resetSettingsButton') as HTMLButtonElement;
+resetSettingsButton.addEventListener('click', () => {
+    if (!confirm('Are you sure you want to reset all settings? This will also refresh the page.')) { return; }
+    cookie = null;
+    updateCookie();
+    location.reload();
+});
 
 /* -------------------------------------------------------------------------- */
 /*                                   Stadium                                  */
