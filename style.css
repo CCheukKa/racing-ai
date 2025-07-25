@@ -504,7 +504,7 @@ body {
         }
 
         .header,
-        .row {
+        .entry {
             display: grid;
             grid-template-columns: 1fr 1fr 1.5fr 1.2fr 1.5fr 1.5fr;
         }
@@ -532,14 +532,13 @@ body {
             }
         }
 
-        .row {
+        .entry {
             padding-block: 5px;
 
             div {
                 display: flex;
                 align-items: flex-end;
                 justify-content: flex-end;
-                /* width: 0; */
                 cursor: pointer;
                 overflow: visible;
                 text-align: right;
@@ -547,6 +546,11 @@ body {
                 font-weight: normal;
                 font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
                 font-size: 14px;
+            }
+
+            &.selected {
+                background-color: #f8f8ff;
+                color: #000000;
             }
         }
 

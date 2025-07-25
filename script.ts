@@ -1050,27 +1050,27 @@ class LeaderBoard {
     private static resetLeaderboardButton = document.getElementById('resetLeaderboardButton') as HTMLButtonElement;
 
     private static updatePeeker = (event: MouseEvent | null) => {
-        const entry = (event?.target as HTMLElement ?? this.leaderboardElement).closest('[data-leaderboard-index]') as HTMLElement | null;
-        if (entry) {
-            const index = parseInt(entry.getAttribute('data-leaderboard-index') || '', 10);
-            if (!isNaN(index) && this.leaderboard[index]) {
-                this.updateCarPeekerContent(this.leaderboard[index], index + 1);
-                if (event) {
-                    const rect = this.leaderboardElement.getBoundingClientRect();
-                    const x = event.clientX - rect.left;
-                    const y = event.clientY - rect.top;
+        const { index } = this.getSelectedLeaderboardEntryIndex(event);
 
-                    const X_OFFSET = 10;
-                    const Y_OFFSET = 0;
+        if (index !== null && this.leaderboard[index]) {
+            this.updateCarPeekerContent(this.leaderboard[index], index + 1);
+            if (event) {
+                const rect = this.leaderboardElement.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
 
-                    this.carPeeker.style.top = `${(y + rect.top) / zoomFactor + Y_OFFSET}px`;
-                    this.carPeeker.style.left = `${(x + rect.left) / zoomFactor + X_OFFSET}px`;
-                }
-                this.carPeeker.classList.remove('hidden');
-                return;
+                const X_OFFSET = 10;
+                const Y_OFFSET = 0;
+
+                this.carPeeker.style.top = `${(y + rect.top) / zoomFactor + Y_OFFSET}px`;
+                this.carPeeker.style.left = `${(x + rect.left) / zoomFactor + X_OFFSET}px`;
             }
+            this.carPeeker.classList.remove('hidden');
+            return;
         }
+
         this.carPeeker.classList.add('hidden');
+        return;
     };
     private static updateCarPeekerContent(carData: SerialisedCarData, rank: number) {
         LeaderBoard.carPeeker.style.setProperty('--carColour', carData.colour);
@@ -1080,11 +1080,39 @@ class LeaderBoard {
         LeaderBoard.carPeeker.textContent = `Rank: ${rank}, Score: ${carData.score.toFixed(2)}, Lap: ${carData.lapCount.toFixed(2)}, Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
     }
 
+    private static getSelectedLeaderboardEntryIndex(event: MouseEvent | null): { index: number | null, entry: HTMLElement | null } {
+        if (!event) { return { index: null, entry: null }; }
+
+        const entry = (event?.target as HTMLElement ?? this.leaderboardElement).closest('[data-leaderboard-index]') as HTMLElement | null;
+        if (entry) {
+            const index = parseInt(entry.getAttribute('data-leaderboard-index') || '', 10);
+            if (!isNaN(index) && this.leaderboard[index]) {
+                return { index, entry };
+            }
+        }
+        return { index: null, entry: null };
+    }
+
+    private static selectCar(event: MouseEvent) {
+        const { index, entry } = this.getSelectedLeaderboardEntryIndex(event);
+        if (index === null || !this.leaderboard[index]) { return; }
+
+        const carData = this.leaderboard[index];
+
+        this.leaderboardElement.querySelectorAll('.entry').forEach(el => el.classList.remove('selected'));
+        entry?.classList.add('selected');
+    }
+
     /* ---------------------------------- Code ---------------------------------- */
 
     public static init() {
-        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
-        this.leaderboardElement.addEventListener('click', (event) => { this.updatePeeker(event); });
+        this.leaderboardElement.addEventListener('mousemove', (event) => {
+            this.updatePeeker(event);
+        });
+        this.leaderboardElement.addEventListener('click', (event) => {
+            this.updatePeeker(event);
+            this.selectCar(event);
+        });
 
         this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
         this.leaderboardElement.addEventListener('mouseleave', () => { this.carPeeker.classList.add('hidden'); });

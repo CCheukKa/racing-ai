@@ -893,10 +893,37 @@ class LeaderBoard {
         _d.carPeeker.style.setProperty('--textColour', textColour);
         _d.carPeeker.textContent = `Rank: ${rank}, Score: ${carData.score.toFixed(2)}, Lap: ${carData.lapCount.toFixed(2)}, Avg Speed: ${carData.averageSpeed.toFixed(4)}`;
     }
+    static getSelectedLeaderboardEntryIndex(event) {
+        if (!event) {
+            return { index: null, entry: null };
+        }
+        const entry = (event?.target ?? this.leaderboardElement).closest('[data-leaderboard-index]');
+        if (entry) {
+            const index = parseInt(entry.getAttribute('data-leaderboard-index') || '', 10);
+            if (!isNaN(index) && this.leaderboard[index]) {
+                return { index, entry };
+            }
+        }
+        return { index: null, entry: null };
+    }
+    static selectCar(event) {
+        const { index, entry } = this.getSelectedLeaderboardEntryIndex(event);
+        if (index === null || !this.leaderboard[index]) {
+            return;
+        }
+        const carData = this.leaderboard[index];
+        this.leaderboardElement.querySelectorAll('.entry').forEach(el => el.classList.remove('selected'));
+        entry?.classList.add('selected');
+    }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
-        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
-        this.leaderboardElement.addEventListener('click', (event) => { this.updatePeeker(event); });
+        this.leaderboardElement.addEventListener('mousemove', (event) => {
+            this.updatePeeker(event);
+        });
+        this.leaderboardElement.addEventListener('click', (event) => {
+            this.updatePeeker(event);
+            this.selectCar(event);
+        });
         this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
         this.leaderboardElement.addEventListener('mouseleave', () => { this.carPeeker.classList.add('hidden'); });
         this.resetLeaderboardButton.addEventListener('click', () => {
@@ -919,25 +946,23 @@ LeaderBoard.carPeeker = document.getElementById('carPeeker');
 /* ----------------------------------- UI ----------------------------------- */
 LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');
 LeaderBoard.updatePeeker = (event) => {
-    const entry = (event?.target ?? _d.leaderboardElement).closest('[data-leaderboard-index]');
-    if (entry) {
-        const index = parseInt(entry.getAttribute('data-leaderboard-index') || '', 10);
-        if (!isNaN(index) && _d.leaderboard[index]) {
-            _d.updateCarPeekerContent(_d.leaderboard[index], index + 1);
-            if (event) {
-                const rect = _d.leaderboardElement.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                const X_OFFSET = 10;
-                const Y_OFFSET = 0;
-                _d.carPeeker.style.top = `${(y + rect.top) / zoomFactor + Y_OFFSET}px`;
-                _d.carPeeker.style.left = `${(x + rect.left) / zoomFactor + X_OFFSET}px`;
-            }
-            _d.carPeeker.classList.remove('hidden');
-            return;
+    const { index } = _d.getSelectedLeaderboardEntryIndex(event);
+    if (index !== null && _d.leaderboard[index]) {
+        _d.updateCarPeekerContent(_d.leaderboard[index], index + 1);
+        if (event) {
+            const rect = _d.leaderboardElement.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const X_OFFSET = 10;
+            const Y_OFFSET = 0;
+            _d.carPeeker.style.top = `${(y + rect.top) / zoomFactor + Y_OFFSET}px`;
+            _d.carPeeker.style.left = `${(x + rect.left) / zoomFactor + X_OFFSET}px`;
         }
+        _d.carPeeker.classList.remove('hidden');
+        return;
     }
     _d.carPeeker.classList.add('hidden');
+    return;
 };
 LeaderBoard.init();
 /* -------------------------------------------------------------------------- */
