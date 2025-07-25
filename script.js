@@ -546,19 +546,22 @@ class Garage {
         updateCookie();
     }
     static redraw() {
-        this.garageCtx.clearRect(0, 0, this.garageCanvas.width, this.garageCanvas.height);
-        this.garageCtx.save();
-        this.garageCtx.translate(this.garageCanvas.width / 2, this.garageCanvas.height / 2);
-        this.garageCtx.rotate(-Math.PI / 2);
         const CAR_SCALE = 2;
+        _b.redrawCarProbes(CAR_SCALE);
+    }
+    static redrawCarProbes(CAR_SCALE, probeAngles = this.probeAngles, carColour = this.GARAGE_CAR_COLOUR, canvas = this.garageCanvas, ctx = this.garageCtx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(-Math.PI / 2);
         const scaledCarWidth = Stadium.CAR_WIDTH * CAR_SCALE;
         const scaledCarHeight = Stadium.CAR_HEIGHT * CAR_SCALE;
-        drawRectangle(this.garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, this.GARAGE_CAR_COLOUR);
-        this.probeAngles.forEach(angle => {
-            drawLine(this.garageCtx, 0, 0, Math.cos(angle) * 100, Math.sin(angle) * 100, 2, this.GARAGE_CAR_COLOUR);
+        drawRectangle(ctx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, carColour);
+        probeAngles.forEach(angle => {
+            drawLine(ctx, 0, 0, Math.cos(angle) * 100, Math.sin(angle) * 100, 2, carColour);
         });
-        drawRectangle(this.garageCtx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, '#000000', true);
-        this.garageCtx.restore();
+        drawRectangle(ctx, -scaledCarWidth / 2, -scaledCarHeight / 2, scaledCarWidth, scaledCarHeight, '#000000', true);
+        ctx.restore();
     }
     /* ---------------------------------- Code ---------------------------------- */
     static init() {
@@ -682,7 +685,7 @@ class NeuralNetwork {
         this.inputLayerElement.parentElement.style.marginLeft = `${nodeRadius}px`;
         this.outputLayerElement.parentElement.style.marginRight = `${nodeRadius}px`;
     }
-    static redrawNeuralNetwork(inputLayerSize, hiddenLayerSizes, canvas = this.neuralNetworkCanvas, ctx = this.neuralNetworkCtx) {
+    static redrawNeuralNetwork(inputLayerSize, hiddenLayerSizes, probeAngles = Garage.probeAngles, carColour = Garage.GARAGE_CAR_COLOUR, canvas = this.neuralNetworkCanvas, ctx = this.neuralNetworkCtx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         // calculate node positions
         const layerSizes = [inputLayerSize, ...hiddenLayerSizes, 2];
@@ -723,7 +726,7 @@ class NeuralNetwork {
             for (let j = 0; j < layerSize; j++) {
                 const { x, y } = nodePositions[i][j];
                 if (i === 0 || i === layerCount - 1) {
-                    const colour = i === 0 ? Garage.GARAGE_CAR_COLOUR : Stadium.TRACK_COLOUR;
+                    const colour = i === 0 ? carColour : Stadium.TRACK_COLOUR;
                     drawCircle(ctx, x, y, nodeRadius, colour);
                 }
                 else {
@@ -737,7 +740,7 @@ class NeuralNetwork {
         // draw node labels
         const fontSize = nodeRadius * 1.6;
         if (this.options.probeDistances.value) {
-            for (let i = 0; i < Garage.probeAngles.length; i++) {
+            for (let i = 0; i < probeAngles.length; i++) {
                 const { x, y } = nodePositions[0][i];
                 drawText(ctx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
             }
@@ -1107,12 +1110,17 @@ class LeaderBoard {
             `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
             `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
             `Generation: ${carData.generation}`,
-            `Probe Angles: ${carData.probeAngles.map(angle => (angle * 180 / Math.PI).toFixed(2)).join(', ')}`,
-            `Inputs: ${carInputs.join(', ')}`,
+            `Inputs: [
+            <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;${carInputs.join(',<br>&nbsp;&nbsp;&nbsp;&nbsp;')}
+            <br>
+            ]`,
         ];
         this.carPeekerTextContentElement.innerHTML = content.join('<br>');
-        NeuralNetwork.redrawNeuralNetwork(carData.network.inputNodes, carData.network.layers.map(layer => layer.nodes.length).slice(0, -1), this.carPeekerNeuralNetworkCanvas, this.carPeekerNeuralNetworkCtx);
+        NeuralNetwork.redrawNeuralNetwork(carData.network.inputNodes, carData.network.layers.map(layer => layer.nodes.length).slice(0, -1), carData.probeAngles, carData.colour, this.carPeekerNeuralNetworkCanvas, this.carPeekerNeuralNetworkCtx);
         this.carPeekerNeuralNetworkLayers.innerHTML = `Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`;
+        Garage.redrawCarProbes(1, carData.probeAngles, carData.colour, this.carPeekerProbeAnglesCanvas, this.carPeekerProbeAnglesCtx);
+        this.carPeekerProbeAnglesList.innerHTML = `Angles: ${carData.probeAngles.map(angle => `${(angle * 180 / Math.PI)}°`).join(', ')}`;
     }
     static getSelectedLeaderboardEntryIndex(event) {
         if (!event) {
@@ -1141,6 +1149,8 @@ class LeaderBoard {
         document.addEventListener('DOMContentLoaded', () => {
             this.carPeekerNeuralNetworkCanvas.width = this.CAR_PEEKER_NEURAL_NETWORK_WIDTH;
             this.carPeekerNeuralNetworkCanvas.height = this.CAR_PEEKER_NEURAL_NETWORK_HEIGHT;
+            this.carPeekerProbeAnglesCanvas.width = this.CAR_PEEKER_PROBE_ANGLES_WIDTH;
+            this.carPeekerProbeAnglesCanvas.height = this.CAR_PEEKER_PROBE_ANGLES_HEIGHT;
         });
         this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
         this.leaderboardElement.addEventListener('click', (event) => {
@@ -1178,13 +1188,18 @@ LeaderBoard.leaderboardElement = document.getElementById('leaderboard');
 LeaderBoard.leaderboardEntryTemplate = document.getElementById('leaderboardEntryTemplate');
 LeaderBoard.LEADERBOARD_MAX_ENTRIES = 100;
 LeaderBoard.leaderboard = [];
-LeaderBoard.CAR_PEEKER_NEURAL_NETWORK_WIDTH = 200;
-LeaderBoard.CAR_PEEKER_NEURAL_NETWORK_HEIGHT = 100;
 LeaderBoard.carPeeker = document.getElementById('carPeeker');
 LeaderBoard.carPeekerTextContentElement = document.getElementById('carPeekerTextContent');
+LeaderBoard.CAR_PEEKER_NEURAL_NETWORK_WIDTH = 200;
+LeaderBoard.CAR_PEEKER_NEURAL_NETWORK_HEIGHT = 100;
 LeaderBoard.carPeekerNeuralNetworkCanvas = document.getElementById('carPeekerNeuralNetwork');
 LeaderBoard.carPeekerNeuralNetworkCtx = _d.carPeekerNeuralNetworkCanvas.getContext('2d');
 LeaderBoard.carPeekerNeuralNetworkLayers = document.getElementById('carPeekerNeuralNetworkLayers');
+LeaderBoard.CAR_PEEKER_PROBE_ANGLES_WIDTH = 100;
+LeaderBoard.CAR_PEEKER_PROBE_ANGLES_HEIGHT = 100;
+LeaderBoard.carPeekerProbeAnglesCanvas = document.getElementById('carPeekerProbeAngles');
+LeaderBoard.carPeekerProbeAnglesCtx = _d.carPeekerProbeAnglesCanvas.getContext('2d');
+LeaderBoard.carPeekerProbeAnglesList = document.getElementById('carPeekerProbeAnglesList');
 /* ----------------------------------- UI ----------------------------------- */
 LeaderBoard.selectedCarData = null;
 LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');

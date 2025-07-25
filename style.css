@@ -643,23 +643,35 @@ body {
             left: -100vw;
             color: #ffffff;
             display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
+            gap: 10px;
             padding: 5px;
             border-radius: 5px;
             border: 2px solid #ffffff;
             text-shadow: 0 0 10px #000000;
 
-            .carPeekerNeuralNetworkContainer {
-                background-color: #00000080;
-                padding: 10px;
-                border-radius: 10px;
+            .right {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 gap: 10px;
+
+                .carPeekerProbeAnglesContainer,
+                .carPeekerNeuralNetworkContainer {
+                    background-color: #00000080;
+                    padding: 10px;
+                    border-radius: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                }
             }
+
         }
     }
 
