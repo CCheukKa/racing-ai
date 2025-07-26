@@ -42,9 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
         do {
             var randomIndex = Math.floor(Math.random() * tips.length);
         } while (currentTipIndex === randomIndex);
-        Array.from(tips).forEach((tip, index) => {
-            tip.classList.toggle('show', index === randomIndex);
-        });
+        const tipElement = tips[randomIndex] as HTMLElement;
+        tipElement.scrollIntoView({ behavior: 'instant', block: 'center' });
         currentTipIndex = randomIndex;
     }
 });
