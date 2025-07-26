@@ -489,6 +489,7 @@ class Cars {
         car.score = carData.score;
         car.network = network;
         car.inputLayerOptions = carData.inputLayerOptions;
+        car.colour = carData.colour;
         return car;
     }
 
