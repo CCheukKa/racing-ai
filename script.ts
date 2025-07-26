@@ -464,7 +464,7 @@ Stadium.init();
 /*                                    Cars                                    */
 /* -------------------------------------------------------------------------- */
 class Cars {
-    public static serialiseCarData(car: Car, generation: number, ticksInGeneration: number): SerialisedCarData {
+    public static serialiseCarData(car: Car, ticksInGeneration: number): SerialisedCarData {
         const probeAngles = car.probes.map(probe => probe.angle);
         return {
             name: car.name,
@@ -474,7 +474,7 @@ class Cars {
             score: car.score,
             network: car.network,
             inputLayerOptions: car.inputLayerOptions,
-            generation: generation,
+            generation: car.generation,
             averageSpeed: car.speedSum / ticksInGeneration,
             onTrackPercentage: 1 - car.grassTicks / ticksInGeneration,
             hash: this.getHash(car),
@@ -489,6 +489,7 @@ class Cars {
         car.score = carData.score;
         car.network = network;
         car.inputLayerOptions = carData.inputLayerOptions;
+        car.generation = carData.generation;
         car.colour = carData.colour;
         return car;
     }
@@ -511,6 +512,7 @@ class Probe {
 class Car {
     public colour: string;
     public name?: string;
+    public generation: number = 0;
 
     public x: number;
     public y: number;
@@ -601,6 +603,7 @@ class Car {
     clone(): Car {
         const newCar = new Car(this.x, this.y, this.probes.map(probe => probe.angle));
         newCar.network = this.network.clone();
+        newCar.generation = this.generation;
         return newCar;
     }
 }
@@ -1055,7 +1058,7 @@ class NaturalSelection {
         });
         const sortedCars = cars.sort((a, b) => b.score - a.score);
 
-        LeaderBoard.leaderboard.push(...sortedCars.map(car => Cars.serialiseCarData(car, Looper.generationCount, Looper.tickCount)));
+        LeaderBoard.leaderboard.push(...sortedCars.map(car => Cars.serialiseCarData(car, Looper.tickCount)));
 
         // Elimination
         let survivedCars: Car[] = [];
@@ -1106,6 +1109,8 @@ class NaturalSelection {
         }
 
         cars = [...survivedCars, ...newCars];
+
+        cars.forEach(car => { car.generation++; });
     }
 
     private static survivalProbability(rank: number): number {
@@ -1250,10 +1255,12 @@ class LeaderBoard {
 
         this.leaderboardElement.innerHTML = '';
         this.leaderboard.forEach((carData, index) => {
+            console.log(carData);
+
             const entryElement = this.leaderboardEntryTemplate.content.cloneNode(true) as HTMLDivElement;
             entryElement.querySelector('.rank')!.textContent = (index + 1).toString();
+            entryElement.querySelector('.id')!.textContent = carData.name || carData.hash.slice(0, 5);
             entryElement.querySelector('.generation')!.textContent = carData.generation.toString();
-            // entryElement.querySelector('.colour')!.style.backgroundColor = car.colour;
             (entryElement.querySelector('.score') as HTMLDivElement).title = carData.score.toString();
             entryElement.querySelector('.score')!.textContent = carData.score.toPrecision(4);
             (entryElement.querySelector('.lap') as HTMLDivElement).title = carData.lapCount.toString();

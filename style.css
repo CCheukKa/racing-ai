@@ -58,6 +58,16 @@ body.raceMode {
     .miscellaneousContainer {
         grid-area: 1 / 4 / 3 / 5 !important;
     }
+
+    .leaderboardContainer {
+        .id {
+            display: initial !important;
+        }
+
+        .generation {
+            display: none !important;
+        }
+    }
 }
 
 input:invalid,
@@ -551,6 +561,18 @@ input:user-invalid {
             flex-grow: 1;
             overflow: hidden;
             width: 100%;
+        }
+
+        .id,
+        .header>.id,
+        .entry>.id {
+            display: none;
+            text-align: center;
+            padding: 0;
+        }
+
+        .entry>.id {
+            word-break: break-all;
         }
 
         .header,
