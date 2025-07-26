@@ -30,6 +30,21 @@ function onLayoutChange() {
     zoomFactor = Math.min((document.body.clientHeight - PADDING) / mainContainer.clientHeight, (document.body.clientWidth - PADDING) / mainContainer.clientWidth);
     mainContainer.style.zoom = zoomFactor.toString();
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const tips = document.getElementsByClassName('tip');
+    let currentTipIndex = NaN;
+    showRandomTip();
+    setInterval(showRandomTip, 10000);
+    function showRandomTip() {
+        do {
+            var randomIndex = Math.floor(Math.random() * tips.length);
+        } while (currentTipIndex === randomIndex);
+        Array.from(tips).forEach((tip, index) => {
+            tip.classList.toggle('show', index === randomIndex);
+        });
+        currentTipIndex = randomIndex;
+    }
+});
 let cars = [];
 var cookie = null;
 const COOKIE_ROOT_NAME = 'cck-wtf-racing-ai';
