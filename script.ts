@@ -157,6 +157,7 @@ raceModeButton.addEventListener('click', () => {
     document.body.classList.toggle('raceMode', isRaceMode);
     Stadium.STADIUM_WIDTH = isRaceMode ? 985 : 600;
     Stadium.recalculateCanvasSizes();
+    Stadium.drawCars();
     setTimeout(() => {
         recalculateWhatTextSizes();
     }, 200);
