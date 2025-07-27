@@ -1323,8 +1323,8 @@ class LeaderBoard {
 
     private static carPeeker = document.getElementById('carPeeker') as HTMLDivElement;
     private static carPeekerTextContentElement = document.getElementById('carPeekerTextContent') as HTMLDivElement;
-    private static CAR_PEEKER_NEURAL_NETWORK_WIDTH = 200;
-    private static CAR_PEEKER_NEURAL_NETWORK_HEIGHT = 100;
+    private static CAR_PEEKER_NEURAL_NETWORK_WIDTH = 400;
+    private static CAR_PEEKER_NEURAL_NETWORK_HEIGHT = 200;
     private static carPeekerNeuralNetworkCanvas = document.getElementById('carPeekerNeuralNetwork') as HTMLCanvasElement;
     private static carPeekerNeuralNetworkCtx = this.carPeekerNeuralNetworkCanvas.getContext('2d') as CanvasRenderingContext2D;
     private static carPeekerNeuralNetworkLayers = document.getElementById('carPeekerNeuralNetworkLayers') as HTMLDivElement;

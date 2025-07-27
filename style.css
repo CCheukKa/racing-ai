@@ -666,49 +666,6 @@ input:user-invalid {
         #resetLeaderboardButton {
             --buttonColour: #ff8888;
         }
-
-        #carPeeker {
-            transition: none;
-            z-index: 99;
-            pointer-events: none;
-            position: absolute;
-            background-color: rgba(from var(--carColour, #000000) r g b / 0.8);
-            backdrop-filter: blur(5px);
-            translate: 0 -100%;
-            top: -100vh;
-            left: -100vw;
-            color: #ffffff;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 5px;
-            border-radius: 5px;
-            border: 2px solid #ffffff;
-            text-shadow: 0 0 10px #000000;
-
-            .right {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-
-                .carPeekerProbeAnglesContainer,
-                .carPeekerNeuralNetworkContainer {
-                    background-color: #00000080;
-                    padding: 10px;
-                    border-radius: 10px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 10px;
-                }
-            }
-
-        }
     }
 
     &>.miscellaneousContainer {
@@ -843,6 +800,48 @@ input:user-invalid {
         .tip {
             font-weight: normal;
             text-wrap: nowrap;
+        }
+    }
+}
+
+#carPeeker {
+    transition: none;
+    z-index: 99;
+    pointer-events: none;
+    position: absolute;
+    background-color: rgba(from var(--carColour, #000000) r g b / 0.8);
+    backdrop-filter: blur(5px);
+    translate: 0 -100%;
+    color: #ffffff;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 2px solid #ffffff;
+    text-shadow: 0 0 10px #000000;
+    top: -100vh;
+    left: -100vw;
+
+    .right {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        .carPeekerProbeAnglesContainer,
+        .carPeekerNeuralNetworkContainer {
+            background-color: #00000080;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
     }
 }
