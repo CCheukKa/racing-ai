@@ -807,7 +807,7 @@ class NeuralNetwork {
     } as const;
 
     public static redraw() {
-        const { layerSizes, layerCount, nodeRadius } = NeuralNetwork.redrawNeuralNetwork(this.getInputLayerSize(), this.hiddenLayerSizes);
+        const { layerSizes, layerCount, nodeRadius } = NeuralNetwork.redrawNeuralNetwork();
 
         // update layer container
         this.inputLayerElement.innerHTML = layerSizes[0].toString();
@@ -816,11 +816,16 @@ class NeuralNetwork {
         this.outputLayerElement.parentElement!.style.marginRight = `${nodeRadius}px`;
     }
 
-    public static redrawNeuralNetwork(inputLayerSize: number, hiddenLayerSizes: number[], probeAngles: number[] = Garage.probeAngles, carColour: string = Garage.GARAGE_CAR_COLOUR, canvas: HTMLCanvasElement = this.neuralNetworkCanvas, ctx: CanvasRenderingContext2D = this.neuralNetworkCtx): { layerSizes: number[], layerCount: number, nodeRadius: number } {
+    public static redrawNeuralNetwork(network?: Network | undefined, probeAngles: number[] = Garage.probeAngles, carColour: string = Garage.GARAGE_CAR_COLOUR, canvas: HTMLCanvasElement = this.neuralNetworkCanvas, ctx: CanvasRenderingContext2D = this.neuralNetworkCtx): { layerSizes: number[], layerCount: number, nodeRadius: number } {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // calculate node positions
-        const layerSizes = [inputLayerSize, ...hiddenLayerSizes, 2];
+        const layerSizes = network
+            ? [network.inputNodes, ...network.layers.map(layer => layer.nodes.length)]
+            : [this.getInputLayerSize(), ...this.hiddenLayerSizes, 2];
+
+        console.log('Neural Network Layer Sizes:', layerSizes);
+
         const layerCount = layerSizes.length;
         const maxLayerSize = Math.max(...layerSizes);
         const nodeRadius = Math.min(
@@ -843,17 +848,26 @@ class NeuralNetwork {
         }
 
         // draw connections
-        layerSizes.forEach((layerSize, i) => {
-            if (i === layerCount - 1) { return; } // Skip last layer
-            const nextLayerSize = layerSizes[i + 1];
-            for (let j = 0; j < layerSize; j++) {
-                const { x: x1, y: y1 } = nodePositions[i][j];
-                for (let k = 0; k < nextLayerSize; k++) {
-                    const { x: x2, y: y2 } = nodePositions[i + 1][k];
-                    drawLine(ctx, x1, y1, x2, y2, 1, '#ffffff40');
+        for (let i = 0; i <= layerCount - 2; i++) {
+            const previousLayerSize = layerSizes[i];
+            const thisLayerSize = layerSizes[i + 1];
+            for (let j = 0; j < thisLayerSize; j++) {
+                const { x: x1, y: y1 } = nodePositions[i + 1][j];
+                for (let k = 0; k < previousLayerSize; k++) {
+                    const { x: x2, y: y2 } = nodePositions[i][k];
+
+                    if (network) {
+                        const weight = network.layers[i].nodes[j].weights[k];
+                        const alpha = interpolate(Math.abs(weight), [0, 1], [0, 0.5]);
+                        const width = interpolate(Math.abs(weight), [0, 1], [0.05, 3]);
+                        const v = weight >= 0 ? 255 : 0;
+                        drawLine(ctx, x1, y1, x2, y2, width, `rgba(${v}, ${v}, ${v}, ${alpha})`);
+                    } else {
+                        drawLine(ctx, x1, y1, x2, y2, 1, '#ffffff40');
+                    }
                 }
             }
-        });
+        }
 
         // draw nodes
         for (let i = 0; i < layerCount; i++) {
@@ -864,10 +878,21 @@ class NeuralNetwork {
                     const colour = i === 0 ? carColour : Stadium.TRACK_COLOUR;
                     drawCircle(ctx, x, y, nodeRadius, colour);
                 } else {
-                    ctx.globalCompositeOperation = 'destination-out';
-                    drawCircle(ctx, x, y, nodeRadius, '#ffffff');
-                    ctx.globalCompositeOperation = 'source-over'; // Reset to default
-                    drawCircle(ctx, x, y, nodeRadius, '#ffffff', true);
+
+                    if (network) {
+                        const bias = network.layers[i - 1].nodes[j].bias;
+                        const v = interpolate(bias, [-0.5, 0.5], [0, 255]);
+                        drawCircle(ctx, x, y, nodeRadius, `rgba(${v}, ${v}, ${v}, 1)`);
+
+                        drawCircle(ctx, x, y, nodeRadius, carColour, true);
+                    } else {
+                        // Hollow centres
+                        ctx.globalCompositeOperation = 'destination-out';
+                        drawCircle(ctx, x, y, nodeRadius, '#ffffff');
+                        ctx.globalCompositeOperation = 'source-over'; // Reset to default
+
+                        drawCircle(ctx, x, y, nodeRadius, '#ffffff', true);
+                    }
                 }
             }
         }
@@ -1364,8 +1389,7 @@ class LeaderBoard {
         this.carPeekerTextContentElement.innerHTML = content.join('<br>');
 
         NeuralNetwork.redrawNeuralNetwork(
-            carData.network.inputNodes,
-            carData.network.layers.map(layer => layer.nodes.length).slice(0, -1),
+            carData.network,
             carData.probeAngles,
             carData.colour,
             this.carPeekerNeuralNetworkCanvas,
