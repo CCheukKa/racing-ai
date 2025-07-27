@@ -1317,6 +1317,8 @@ class LeaderBoard {
 
             this.leaderboardElement.appendChild(entryElement);
         });
+
+        this.updatePeeker(this.lastMouseEvent);
     }
 
     private static carPeeker = document.getElementById('carPeeker') as HTMLDivElement;
@@ -1337,6 +1339,7 @@ class LeaderBoard {
     private static selectedCarData: SerialisedCarData | null = null;
     private static resetLeaderboardButton = document.getElementById('resetLeaderboardButton') as HTMLButtonElement;
     private static exportSelectedCarButton = document.getElementById('exportSelectedCarButton') as HTMLButtonElement;
+    private static lastMouseEvent: MouseEvent | null = null;
 
     private static updatePeeker = (event: MouseEvent | null) => {
         const { index } = this.getSelectedLeaderboardEntryIndex(event);
@@ -1441,14 +1444,24 @@ class LeaderBoard {
             this.carPeekerProbeAnglesCanvas.height = this.CAR_PEEKER_PROBE_ANGLES_HEIGHT;
         });
 
-        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
+        this.leaderboardElement.addEventListener('mousemove', (event) => {
+            this.lastMouseEvent = event;
+            this.updatePeeker(event);
+        });
         this.leaderboardElement.addEventListener('click', (event) => {
+            this.lastMouseEvent = event;
             this.updatePeeker(event);
             this.selectCar(event);
         });
 
-        this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
-        this.leaderboardElement.addEventListener('mouseleave', () => { this.carPeeker.classList.add('hidden'); });
+        this.leaderboardElement.addEventListener('scroll', () => {
+            this.lastMouseEvent = null;
+            this.carPeeker.classList.add('hidden');
+        });
+        this.leaderboardElement.addEventListener('mouseleave', () => {
+            this.lastMouseEvent = null;
+            this.carPeeker.classList.add('hidden');
+        });
 
         this.resetLeaderboardButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to reset the leaderboard?')) { return; }

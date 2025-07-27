@@ -1138,6 +1138,7 @@ class LeaderBoard {
             entryElement.firstElementChild.setAttribute('data-leaderboard-index', index.toString());
             this.leaderboardElement.appendChild(entryElement);
         });
+        this.updatePeeker(this.lastMouseEvent);
     }
     static updateCarPeekerContent(carData) {
         _d.carPeeker.style.setProperty('--carColour', carData.colour);
@@ -1198,13 +1199,23 @@ class LeaderBoard {
             this.carPeekerProbeAnglesCanvas.width = this.CAR_PEEKER_PROBE_ANGLES_WIDTH;
             this.carPeekerProbeAnglesCanvas.height = this.CAR_PEEKER_PROBE_ANGLES_HEIGHT;
         });
-        this.leaderboardElement.addEventListener('mousemove', (event) => { this.updatePeeker(event); });
+        this.leaderboardElement.addEventListener('mousemove', (event) => {
+            this.lastMouseEvent = event;
+            this.updatePeeker(event);
+        });
         this.leaderboardElement.addEventListener('click', (event) => {
+            this.lastMouseEvent = event;
             this.updatePeeker(event);
             this.selectCar(event);
         });
-        this.leaderboardElement.addEventListener('scroll', () => { this.carPeeker.classList.add('hidden'); });
-        this.leaderboardElement.addEventListener('mouseleave', () => { this.carPeeker.classList.add('hidden'); });
+        this.leaderboardElement.addEventListener('scroll', () => {
+            this.lastMouseEvent = null;
+            this.carPeeker.classList.add('hidden');
+        });
+        this.leaderboardElement.addEventListener('mouseleave', () => {
+            this.lastMouseEvent = null;
+            this.carPeeker.classList.add('hidden');
+        });
         this.resetLeaderboardButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to reset the leaderboard?')) {
                 return;
@@ -1254,6 +1265,7 @@ LeaderBoard.carPeekerProbeAnglesList = document.getElementById('carPeekerProbeAn
 LeaderBoard.selectedCarData = null;
 LeaderBoard.resetLeaderboardButton = document.getElementById('resetLeaderboardButton');
 LeaderBoard.exportSelectedCarButton = document.getElementById('exportSelectedCarButton');
+LeaderBoard.lastMouseEvent = null;
 LeaderBoard.updatePeeker = (event) => {
     const { index } = _d.getSelectedLeaderboardEntryIndex(event);
     if (index !== null && _d.leaderboard[index]) {
