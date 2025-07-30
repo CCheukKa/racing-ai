@@ -674,31 +674,30 @@ class NeuralNetwork {
         return size;
     }
     static getInputLayerValues(car, inputOptions) {
-        let inputLayerValues = (inputOptions
-            ? [
-                ...inputOptions.probeDistances ? car.probes.map(probe => probe.distance) : [],
-                inputOptions.carSpeed ? car.speed : NaN,
-                inputOptions.carAngle ? car.angle : NaN,
-                ...inputOptions.carPosition ? [car.x - Stadium.STADIUM_WIDTH / 2, car.y - Stadium.STADIUM_HEIGHT / 2] : [],
-                inputOptions.trackAngle ? car.originAngle : NaN,
-                inputOptions.lapCount ? car.lapCount : NaN,
-                inputOptions.onTrack ? (car.isOnTrack ? 1 : 0) : NaN,
-                inputOptions.roadScore ? car.score : NaN,
-                inputOptions.performanceScore ? Stadium.getPerformanceScore(car, Looper.tickCount) : NaN,
-                inputOptions.currentTick ? Looper.tickCount : NaN
-            ]
-            : [
-                ...this.options.probeDistances.value ? car.probes.map(probe => probe.distance) : [],
-                this.options.carSpeed.value ? car.speed : NaN,
-                this.options.carAngle.value ? car.angle : NaN,
-                ...this.options.carPosition.value ? [car.x - Stadium.STADIUM_WIDTH / 2, car.y - Stadium.STADIUM_HEIGHT / 2] : [],
-                this.options.trackAngle.value ? car.originAngle : NaN,
-                this.options.lapCount.value ? car.lapCount : NaN,
-                this.options.onTrack.value ? (car.isOnTrack ? 1 : 0) : NaN,
-                this.options.roadScore.value ? car.score : NaN,
-                this.options.performanceScore.value ? Stadium.getPerformanceScore(car, Looper.tickCount) : NaN,
-                this.options.currentTick.value ? Looper.tickCount : NaN
-            ]).filter(value => !isNaN(value));
+        let options = {
+            probeDistances: inputOptions?.probeDistances ?? this.options.probeDistances.value,
+            carSpeed: inputOptions?.carSpeed ?? this.options.carSpeed.value,
+            carAngle: inputOptions?.carAngle ?? this.options.carAngle.value,
+            carPosition: inputOptions?.carPosition ?? this.options.carPosition.value,
+            trackAngle: inputOptions?.trackAngle ?? this.options.trackAngle.value,
+            lapCount: inputOptions?.lapCount ?? this.options.lapCount.value,
+            onTrack: inputOptions?.onTrack ?? this.options.onTrack.value,
+            roadScore: inputOptions?.roadScore ?? this.options.roadScore.value,
+            performanceScore: inputOptions?.performanceScore ?? this.options.performanceScore.value,
+            currentTick: inputOptions?.currentTick ?? this.options.currentTick.value,
+        };
+        let inputLayerValues = [
+            ...options.probeDistances ? car.probes.map(probe => probe.distance) : [],
+            options.carSpeed ? car.speed : NaN,
+            options.carAngle ? car.angle : NaN,
+            ...options.carPosition ? [car.x - Stadium.STADIUM_WIDTH / 2, car.y - Stadium.STADIUM_HEIGHT / 2] : [],
+            options.trackAngle ? car.originAngle : NaN,
+            options.lapCount ? car.lapCount : NaN,
+            options.onTrack ? (car.isOnTrack ? 1 : 0) : NaN,
+            options.roadScore ? car.score : NaN,
+            options.performanceScore ? Stadium.getPerformanceScore(car, Looper.tickCount) : NaN,
+            options.currentTick ? Looper.tickCount : NaN
+        ].filter(value => !isNaN(value));
         return inputLayerValues;
     }
     static serialiseInputLayerOptions() {
