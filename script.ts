@@ -153,7 +153,7 @@ function importCarFiles(files: FileList | File[]) {
             if (results.length === 1) {
                 if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash + (carData.name ? ` (${carData.name})` : '')}`)) return;
             }
-            const car = Cars.deserialiseCarData(carData);
+            const car = Cars.deserialiseCarData(carData, true);
             cars.push(car);
             LeaderBoard.leaderboard.push(carData);
             LeaderBoard.update();
@@ -497,9 +497,12 @@ class Cars {
             hash: this.getHash(car),
         };
     }
-    public static deserialiseCarData(carData: SerialisedCarData): Car {
+    public static deserialiseCarData(carData: SerialisedCarData, importMode: boolean = false): Car {
         const car = new Car(undefined, undefined, carData.probeAngles);
-        const network = new Network([NeuralNetwork.getInputLayerSize(), ...NeuralNetwork.hiddenLayerSizes, 2]);
+        const network = new Network([
+            importMode ? carData.network.inputNodes : NeuralNetwork.getInputLayerSize(),
+            ... (importMode ? carData.network.layers.map(layer => layer.nodes.length).slice(0, -1) : NeuralNetwork.hiddenLayerSizes),
+            2]);
         network.layers = carData.network.layers;
         car.name = carData.name;
         car.lapCount = carData.lapCount;
