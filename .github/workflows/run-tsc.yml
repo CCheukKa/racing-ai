@@ -1,0 +1,40 @@
+name: Run TSC
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+concurrency:
+    group: run-tsc
+    cancel-in-progress: true
+
+permissions:
+    contents: write
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+
+            - name: Install dependencies
+              run: npm install typescript --save-dev
+
+            - name: Build site
+              run: npm run build
+
+            - name: Commit changes
+              run: |
+                  git config --global user.name 'tsc-runner[bot]'
+                  git config --global user.email 'tsc-runner[bot]@users.noreply.github.com'
+                  git add .
+                  git commit -m "Build site" || echo "No changes to commit"
+                  git push origin main
