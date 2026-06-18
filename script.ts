@@ -387,6 +387,8 @@ class Stadium {
             }
         });
         document.addEventListener('touchstart', (event: TouchEvent) => {
+            if (!event.touches[0]) { return; }
+
             const rect = this.trackCanvas.getBoundingClientRect();
             const x = (event.touches[0].clientX - rect.left) / zoomFactor;
             const y = (event.touches[0].clientY - rect.top) / zoomFactor;
@@ -401,6 +403,8 @@ class Stadium {
             handleMouseMove(x, y);
         });
         document.addEventListener('touchmove', (event: TouchEvent) => {
+            if (!event.touches[0]) { return; }
+
             const rect = this.trackCanvas.getBoundingClientRect();
             const x = (event.touches[0].clientX - rect.left) / zoomFactor;
             const y = (event.touches[0].clientY - rect.top) / zoomFactor;
@@ -484,7 +488,7 @@ class Cars {
     public static serialiseCarData(car: Car, ticksInGeneration: number): SerialisedCarData {
         const probeAngles = car.probes.map(probe => probe.angle);
         return {
-            name: car.name,
+            name: car.name ?? "",
             colour: car.colour,
             probeAngles: probeAngles,
             lapCount: car.lapCount,
@@ -504,7 +508,7 @@ class Cars {
             ... (importMode ? carData.network.layers.map(layer => layer.nodes.length).slice(0, -1) : NeuralNetwork.hiddenLayerSizes),
             2]);
         network.layers = carData.network.layers;
-        car.name = carData.name;
+        car.name = carData.name ?? "";
         car.lapCount = carData.lapCount;
         car.score = carData.score;
         car.network = network;
@@ -823,10 +827,13 @@ class NeuralNetwork {
 
     public static redraw() {
         const { layerSizes, layerCount, nodeRadius } = NeuralNetwork.redrawNeuralNetwork();
+        if (layerSizes.length !== layerCount) {
+            throw new Error(`Layer sizes length (${layerSizes.length}) does not match layer count (${layerCount})`);
+        }
 
         // update layer container
-        this.inputLayerElement.innerHTML = layerSizes[0].toString();
-        this.outputLayerElement.innerHTML = layerSizes[layerCount - 1].toString();
+        this.inputLayerElement.innerHTML = layerSizes[0]!.toString();
+        this.outputLayerElement.innerHTML = layerSizes[layerCount - 1]!.toString();
         this.inputLayerElement.parentElement!.style.marginLeft = `${nodeRadius}px`;
         this.outputLayerElement.parentElement!.style.marginRight = `${nodeRadius}px`;
     }
@@ -851,28 +858,28 @@ class NeuralNetwork {
         const layerWidth = (canvas.width - nodeRadius * 2) / (layerCount - 1);
         const nodePositions: { x: number; y: number; }[][] = [];
         for (let i = 0; i < layerCount; i++) {
-            const layerSize = layerSizes[i];
+            const layerSize = layerSizes[i]!;
             const layerX = nodeRadius + i * layerWidth;
             nodePositions[i] = [];
             const totalNodesHeight = layerSize * nodeHeight;
             const verticalOffset = (canvas.height - totalNodesHeight) / 2;
             for (let j = 0; j < layerSize; j++) {
                 const nodeY = verticalOffset + j * nodeHeight + nodeHeight / 2;
-                nodePositions[i].push({ x: layerX, y: nodeY });
+                nodePositions[i]!.push({ x: layerX, y: nodeY });
             }
         }
 
         // draw connections
         for (let i = 0; i <= layerCount - 2; i++) {
-            const previousLayerSize = layerSizes[i];
-            const thisLayerSize = layerSizes[i + 1];
+            const previousLayerSize = layerSizes[i]!;
+            const thisLayerSize = layerSizes[i + 1]!;
             for (let j = 0; j < thisLayerSize; j++) {
-                const { x: x1, y: y1 } = nodePositions[i + 1][j];
+                const { x: x1, y: y1 } = nodePositions[i + 1]![j]!;
                 for (let k = 0; k < previousLayerSize; k++) {
-                    const { x: x2, y: y2 } = nodePositions[i][k];
+                    const { x: x2, y: y2 } = nodePositions[i]![k]!;
 
                     if (network) {
-                        const weight = network.layers[i].nodes[j].weights[k];
+                        const weight = network.layers[i]!.nodes[j]!.weights[k]!;
                         const alpha = interpolate(Math.abs(weight), [0, 1], [0, 0.5]);
                         const width = interpolate(Math.abs(weight), [0, 1], [0.05, 3]);
                         const v = weight >= 0 ? 255 : 0;
@@ -886,16 +893,16 @@ class NeuralNetwork {
 
         // draw nodes
         for (let i = 0; i < layerCount; i++) {
-            const layerSize = layerSizes[i];
+            const layerSize = layerSizes[i]!;
             for (let j = 0; j < layerSize; j++) {
-                const { x, y } = nodePositions[i][j];
+                const { x, y } = nodePositions[i]![j]!;
                 if (i === 0 || i === layerCount - 1) {
                     const colour = i === 0 ? carColour : Stadium.TRACK_COLOUR;
                     drawCircle(ctx, x, y, nodeRadius, colour);
                 } else {
 
                     if (network) {
-                        const bias = network.layers[i - 1].nodes[j].bias;
+                        const bias = network.layers[i - 1]!.nodes[j]!.bias;
                         const v = interpolate(bias, [-0.5, 0.5], [0, 255]);
                         drawCircle(ctx, x, y, nodeRadius, `rgba(${v}, ${v}, ${v}, 1)`);
 
@@ -916,12 +923,12 @@ class NeuralNetwork {
         const fontSize = nodeRadius * 1.6;
         if (this.options.probeDistances.value) {
             for (let i = 0; i < probeAngles.length; i++) {
-                const { x, y } = nodePositions[0][i];
+                const { x, y } = nodePositions[0]![i]!;
                 drawText(ctx, `P`, x, y + fontSize * 0.1125, '#000000', { fontSize, bold: true });
             }
         }
-        drawText(ctx, `↕`, nodePositions[layerCount - 1][0].x, nodePositions[layerCount - 1][0].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
-        drawText(ctx, `↔`, nodePositions[layerCount - 1][1].x, nodePositions[layerCount - 1][1].y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        drawText(ctx, `↕`, nodePositions[layerCount - 1]![0]!.x, nodePositions[layerCount - 1]![0]!.y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
+        drawText(ctx, `↔`, nodePositions[layerCount - 1]![1]!.x, nodePositions[layerCount - 1]![1]!.y, '#000000', { fontSize, bold: true, strokeWidth: 0.5 });
         return { layerSizes, layerCount, nodeRadius };
     }
 
@@ -1013,14 +1020,14 @@ class Network {
     public layers: Layer[];
 
     constructor(numNodesInLayer: number[]) {
-        this.inputNodes = numNodesInLayer[0];
+        this.inputNodes = numNodesInLayer[0]!;
         this.layers = numNodesInLayer.slice(1).map((numNodes, index) => {
-            const numInputs = index === 0 ? this.inputNodes : numNodesInLayer[index];
+            const numInputs = index === 0 ? this.inputNodes : numNodesInLayer[index]!;
             return new Layer(numInputs, numNodes);
         });
     }
 
-    predict(inputs: number[]): number[] {
+    predict(inputs: number[]): [number, number] {
         if (inputs.length !== this.inputNodes) {
             throw new Error(`Expected ${this.inputNodes} inputs, but got ${inputs.length}`);
         }
@@ -1028,11 +1035,14 @@ class Network {
         let output = inputs;
         for (const layer of this.layers) {
             output = layer.nodes.map(node => {
-                const weightedSum = node.weights.reduce((sum, weight, index) => sum + weight * output[index], 0);
+                const weightedSum = node.weights.reduce((sum, weight, index) => sum + weight * output[index]!, 0);
                 return NeuralNetwork.activationFunction(weightedSum + node.bias);
             });
         }
-        return output;
+        if (output.length !== 2) {
+            throw new Error(`Expected 2 outputs, but got ${output.length}`);
+        }
+        return output as [number, number];
     }
     mutate() {
         this.layers.forEach(layer => {
@@ -1047,11 +1057,11 @@ class Network {
         const newNetwork = new Network([]);
         newNetwork.inputNodes = this.inputNodes;
         newNetwork.layers = this.layers.map(layer =>
-            new Layer(layer.nodes[0].weights.length, layer.nodes.length)
+            new Layer(layer.nodes[0]!.weights.length, layer.nodes.length)
         );
         newNetwork.layers.forEach((newLayer, index) => {
             newLayer.nodes.forEach((newNode, nodeIndex) => {
-                const oldNode = this.layers[index].nodes[nodeIndex];
+                const oldNode = this.layers[index]!.nodes[nodeIndex]!;
                 newNode.weights = [...oldNode.weights];
                 newNode.bias = oldNode.bias;
             });
@@ -1129,7 +1139,7 @@ class NaturalSelection {
                 console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
                 if (willSurvive) { survivedCars.push(car); }
             });
-            console.log(`***** Best car score: ${sortedCars[0].score}, Lap: ${sortedCars[0].lapCount}, GrassT: ${sortedCars[0].grassTicks}, SpeedAvg: ${sortedCars[0].speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0].network.getHash()} *****`);
+            console.log(`***** Best car score: ${sortedCars[0]!.score}, Lap: ${sortedCars[0]!.lapCount}, GrassT: ${sortedCars[0]!.grassTicks}, SpeedAvg: ${sortedCars[0]!.speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0]!.network.getHash()} *****`);
 
             console.log(`${(survivedCars.length / cars.length * 100).toFixed(2)}% survived`);
 
@@ -1137,7 +1147,7 @@ class NaturalSelection {
                 generation: Looper.generationCount,
                 populationSize: this.options.populationSize.value,
                 survivors: survivedCars.length,
-                bestScore: sortedCars[0].score
+                bestScore: sortedCars[0]!.score
             };
             this.updateLog();
         }
@@ -1749,9 +1759,9 @@ function drawLine(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: num
 
 function drawPath(ctx: CanvasRenderingContext2D, path: Array<{ x: number, y: number }>, width: number, colour: string) {
     ctx.beginPath();
-    ctx.moveTo(path[0].x, path[0].y);
+    ctx.moveTo(path[0]!.x, path[0]!.y);
     for (let i = 1; i < path.length; i++) {
-        ctx.lineTo(path[i].x, path[i].y);
+        ctx.lineTo(path[i]!.x, path[i]!.y);
     }
     ctx.strokeStyle = colour;
     ctx.lineWidth = width;
@@ -1819,18 +1829,18 @@ function interpolate(value: number, inPoints: number[], outPoints: number[]): nu
     if (inPoints.length !== outPoints.length) {
         throw new Error('Input and output points must have the same length');
     }
-    if (value < inPoints[0]) {
-        return outPoints[0];
+    if (value < inPoints[0]!) {
+        return outPoints[0]!;
     }
-    if (value > inPoints[inPoints.length - 1]) {
-        return outPoints[outPoints.length - 1];
+    if (value > inPoints[inPoints.length - 1]!) {
+        return outPoints[outPoints.length - 1]!;
     }
 
-    let output = outPoints[0];
+    let output = outPoints[0]!;
     for (let i = 0; i < inPoints.length - 1; i++) {
-        if (value >= inPoints[i] && value <= inPoints[i + 1]) {
-            const ratio = (value - inPoints[i]) / (inPoints[i + 1] - inPoints[i]);
-            output = outPoints[i] + ratio * (outPoints[i + 1] - outPoints[i]);
+        if (value >= inPoints[i]! && value <= inPoints[i + 1]!) {
+            const ratio = (value - inPoints[i]!) / (inPoints[i + 1]! - inPoints[i]!);
+            output = outPoints[i]! + ratio * (outPoints[i + 1]! - outPoints[i]!);
             break;
         }
     }
