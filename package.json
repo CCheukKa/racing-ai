@@ -1,8 +1,14 @@
 {
-    "scripts": {
-        "build": "npx tsc"
-    },
     "devDependencies": {
-        "typescript": "^5.9.3"
+        "@types/bun": "latest",
+        "@types/js-cookie": "^3.0.6"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    },
+    "name": "racing-ai",
+    "private": true,
+    "dependencies": {
+        "js-cookie": "^3.0.8"
     }
 }

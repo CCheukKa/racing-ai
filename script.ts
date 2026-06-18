@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let cars: Car[] = [];
 
 /* --------------------------------- Cookie --------------------------------- */
+import Cookies from 'js-cookie';
 type Cookie = {
     probeAngles?: number[];
     inputLayerOptions?: SerialisedInputLayerOptions;
@@ -60,8 +61,7 @@ type Cookie = {
 };
 var cookie: Cookie | null = null;
 const COOKIE_ROOT_NAME = 'cck-wtf-racing-ai';
-var Cookies: any; //! Assuming Cookies is a global object from js-cookie library
-try { cookie = JSON.parse(Cookies.get(COOKIE_ROOT_NAME)) as Cookie; } catch (e) { console.log(e); }
+try { cookie = JSON.parse(Cookies.get(COOKIE_ROOT_NAME) ?? "") as Cookie; } catch (e) { console.log(e); }
 if (cookie) {
     console.log('Cookie fetched:', cookie);
 } else {
