@@ -10,5 +10,8 @@
     "private": true,
     "dependencies": {
         "js-cookie": "^3.0.8"
+    },
+    "scripts": {
+        "build": "bun build index.html --outdir ./out"
     }
 }
