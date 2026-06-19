@@ -12,6 +12,6 @@
         "js-cookie": "^3.0.8"
     },
     "scripts": {
-        "build": "bun build index.html --outdir ./out"
+        "build": "bun build index.html --outdir ./out --target browser --minify --sourcemap=linked"
     }
 }
