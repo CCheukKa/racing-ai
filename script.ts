@@ -32,6 +32,17 @@ function onLayoutChange() {
     mainContainer.style.zoom = zoomFactor.toString();
 }
 
+function getCanvasPoint(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY,
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const tips = document.getElementsByClassName('tip');
     let currentTipIndex = NaN;
@@ -368,9 +379,7 @@ class Stadium {
             event.preventDefault();
         });
         document.addEventListener('mousedown', (event: MouseEvent) => {
-            const rect = this.trackCanvas.getBoundingClientRect();
-            const x = (event.clientX - rect.left) / zoomFactor;
-            const y = (event.clientY - rect.top) / zoomFactor;
+            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
 
             switch (event.button) {
                 case 0: // Left button
@@ -389,25 +398,19 @@ class Stadium {
         document.addEventListener('touchstart', (event: TouchEvent) => {
             if (!event.touches[0]) { return; }
 
-            const rect = this.trackCanvas.getBoundingClientRect();
-            const x = (event.touches[0].clientX - rect.left) / zoomFactor;
-            const y = (event.touches[0].clientY - rect.top) / zoomFactor;
+            const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
 
             handleLeftClick(x, y, event.touches[0].target);
         });
         document.addEventListener('mousemove', (event: MouseEvent) => {
-            const rect = this.trackCanvas.getBoundingClientRect();
-            const x = (event.clientX - rect.left) / zoomFactor;
-            const y = (event.clientY - rect.top) / zoomFactor;
+            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
 
             handleMouseMove(x, y);
         });
         document.addEventListener('touchmove', (event: TouchEvent) => {
             if (!event.touches[0]) { return; }
 
-            const rect = this.trackCanvas.getBoundingClientRect();
-            const x = (event.touches[0].clientX - rect.left) / zoomFactor;
-            const y = (event.touches[0].clientY - rect.top) / zoomFactor;
+            const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
 
             handleMouseMove(x, y);
         });
