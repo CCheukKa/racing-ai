@@ -245,14 +245,16 @@ export class Stadium {
         document.addEventListener('mousemove', (event: MouseEvent) => {
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
 
-            handleMouseMove(x, y);
+            const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         });
         document.addEventListener('touchmove', (event: TouchEvent) => {
             if (!event.touches[0]) { return; }
 
             const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
 
-            handleMouseMove(x, y);
+            const isOnCanvas = this.stadiumContainer.contains(event.touches[0].target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         });
         document.addEventListener('mouseup', () => {
             handleMouseUp();
@@ -267,17 +269,23 @@ export class Stadium {
 
             isLeftMouseDown = true;
             isRightMouseDown = false;
-            handleMouseMove(x, y);
+            const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         }
         function handleRightClick(x: number, y: number, target: EventTarget | null) {
             if (shouldDiscardEvent(target)) { return; }
 
             isLeftMouseDown = false;
             isRightMouseDown = true;
-            handleMouseMove(x, y);
+            const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         }
-        function handleMouseMove(x: number, y: number) {
-            Stadium.redrawHint(x, y);
+        function handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
+            if (isOnCanvas || isLeftMouseDown || isRightMouseDown) {
+                Stadium.redrawHint(x, y);
+            } else {
+                Stadium.redrawHint(NaN, NaN);
+            }
 
             if (isLeftMouseDown) {
                 drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
