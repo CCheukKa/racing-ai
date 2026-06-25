@@ -308,10 +308,12 @@ export class Stadium {
                 Stadium.updateTrackData();
             }
             if (isRightMouseDown) {
+                const ERASE_BUFFER_RADIUS = 4;
+
                 Stadium.trackCtx.globalCompositeOperation = 'destination-out';
-                drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, '#ffffff');
+                drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
                 if (previousX !== undefined && previousY !== undefined) {
-                    drawLine(Stadium.trackCtx, previousX, previousY, x, y, Stadium.TRACK_WIDTH, '#ffffff');
+                    drawLine(Stadium.trackCtx, previousX, previousY, x, y, Stadium.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
                 }
                 Stadium.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
                 previousX = x;
