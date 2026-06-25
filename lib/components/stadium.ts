@@ -67,7 +67,7 @@ export class Stadium {
     private static trackData: Uint8ClampedArray<ArrayBufferLike> = new Uint8ClampedArray();
 
 
-    private static redrawHint(x: number, y: number) {
+    private static redrawHintCanvas(x: number, y: number) {
         Stadium.hintCtx.clearRect(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT);
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
@@ -175,7 +175,7 @@ export class Stadium {
         this.carCanvas.height = this.STADIUM_HEIGHT;
         this.hintCanvas.width = this.STADIUM_WIDTH;
         this.hintCanvas.height = this.STADIUM_HEIGHT;
-        this.redrawHint(NaN, NaN);
+        this.redrawHintCanvas(NaN, NaN);
         Stadium.updateTrackData();
     }
 
@@ -257,7 +257,7 @@ export class Stadium {
         });
         document.addEventListener('touchend', () => {
             handleMouseUp();
-            this.redrawHint(NaN, NaN);
+            this.redrawHintCanvas(NaN, NaN);
         });
 
         function handleLeftClick(x: number, y: number, target: EventTarget | null) {
@@ -275,7 +275,7 @@ export class Stadium {
             handleMouseMove(x, y);
         }
         function handleMouseMove(x: number, y: number) {
-            Stadium.redrawHint(x, y);
+            Stadium.redrawHintCanvas(x, y);
 
             if (isLeftMouseDown) {
                 drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
