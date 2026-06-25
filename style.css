@@ -47,6 +47,7 @@ body {
 
 body.lowPerformanceMode {
     --backdrop-filter: ;
+    color-scheme: light;
 }
 
 body.raceMode {
