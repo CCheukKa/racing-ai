@@ -558,6 +558,8 @@ input:user-invalid {
                 overflow-y: auto;
                 direction: rtl;
                 flex-grow: 1;
+                min-height: 100px;
+                position: relative;
 
                 scroll-snap-type: proximity;
                 /* scrollbar-width: thin; */
@@ -568,6 +570,21 @@ input:user-invalid {
 
                 * {
                     direction: ltr;
+                }
+
+                &:not(:has(.row))::before {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    height: 0;
+                    width: 0;
+                    overflow: visible;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    content: "No entries yet";
+                    text-align: center;
+                    white-space: nowrap;
                 }
             }
         }
@@ -657,6 +674,8 @@ input:user-invalid {
             direction: rtl;
             flex-grow: 1;
             background-color: #00000040;
+            min-height: 100px;
+            position: relative;
 
             scroll-snap-type: proximity;
             /* scrollbar-width: thin; */
@@ -667,6 +686,21 @@ input:user-invalid {
 
             * {
                 direction: ltr;
+            }
+
+            &:not(:has(.entry))::before {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                height: 0;
+                width: 0;
+                overflow: visible;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                content: "No entries yet";
+                text-align: center;
+                white-space: nowrap;
             }
         }
 
