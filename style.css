@@ -33,6 +33,7 @@ body {
     height: 100svh;
     overflow: hidden;
     overscroll-behavior: none;
+    color-scheme: light;
 }
 
 body.raceMode {
