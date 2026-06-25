@@ -24,13 +24,8 @@ export class UI {
     public static init() {
         document.addEventListener("DOMContentLoaded", () => {
             this.recalculateWhatTextSizes();
-            this.onLayoutChange();
             this.bindTips();
             this.bindMiscellaneousUi();
-        });
-
-        window.addEventListener("resize", () => {
-            this.onLayoutChange();
         });
     }
 
@@ -40,20 +35,6 @@ export class UI {
             element.style.width = element.parentElement?.clientWidth + "px";
             element.style.height = element.parentElement?.clientHeight + "px";
         });
-    }
-
-    private static onLayoutChange() {
-        const mainContainer = document.getElementById("mainContainer") as HTMLDivElement | null;
-        if (!mainContainer) { return; }
-
-        const PADDING = 100;
-        const nextZoomFactor = Math.min(
-            (document.body.clientHeight - PADDING) / mainContainer.clientHeight,
-            (document.body.clientWidth - PADDING) / mainContainer.clientWidth,
-        );
-
-        UI.zoomFactor = nextZoomFactor;
-        mainContainer.style.zoom = nextZoomFactor.toString();
     }
 
     private static bindTips() {

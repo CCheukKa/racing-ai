@@ -16,7 +16,7 @@
 
 <body>
     <div id="mainContainer">
-        <div class="tipsContainer">
+        <div class="tipsContainer window">
             <div class="tips">
                 <div class="tip"><b>Tip:</b> <u>Versatility is important.</u></div>
                 <div class="tip"><b>Tip:</b> <u>Stay on track.</u></div>
@@ -47,7 +47,7 @@
                 <div class="tip"><b>Tip:</b> <u>You can drag and drop car JSON files to import them.</u></div>
             </div>
         </div>
-        <div id="stadiumContainer" class="outline">
+        <div id="stadiumContainer" class="outline window">
             <div class="whatText">Racing<br>Stadium</div>
             <div class="tutorialText">LMB: Draw Track<br>RMB: Erase Track</div>
             <button id="clearStadiumButton">🗑️ Clear Stadium</button>
@@ -55,7 +55,7 @@
             <canvas id="carCanvas"></canvas>
             <canvas id="trackCanvas"></canvas>
         </div>
-        <div class="garageContainer outline">
+        <div class="garageContainer outline window">
             <div class="whatText">Garage</div>
             <div class="garageCanvasContainer">
                 <div id="frontText">Front (0°)</div>
@@ -67,7 +67,7 @@
                 <textarea name="probeAngles" id="probeAngles" placeholder="0&#10;30&#10;-30&#10;...">0</textarea>
             </div>
         </div>
-        <div class="neuralNetworkContainer outline">
+        <div class="neuralNetworkContainer outline window">
             <div class="whatText">Neural<br>Network</div>
             <div class="inputControlContainer">
                 <div class="title">Input Layer</div>
@@ -150,7 +150,7 @@
                 </div>
             </div>
         </div>
-        <div class="naturalSelectionContainer outline">
+        <div class="naturalSelectionContainer outline window">
             <div class="whatText">Natural Selection</div>
             <div class="inputControlContainer">
                 <div class="option">
@@ -196,6 +196,11 @@
                     <input type="checkbox" id="parentShouldMutate">
                 </div>
             </div>
+            <div class="tickerControlsContainer">
+                <button id="tickLoopButton">Start</button>
+                <button id="generationLoopButton" disabled>Stop after this</button>
+                <div id="tickCounter"></div>
+            </div>
             <div class="statusBoard">
                 <div class="header">
                     <div>Gen</div>
@@ -214,13 +219,8 @@
                     </template>
                 </div>
             </div>
-            <div class="bottom">
-                <button id="tickLoopButton">Start</button>
-                <button id="generationLoopButton" disabled>Stop after this</button>
-                <div id="tickCounter"></div>
-            </div>
         </div>
-        <div class="leaderboardContainer outline">
+        <div class="leaderboardContainer outline window">
             <div class="whatText">Leaderboard</div>
             <div class="leaderboardTableContainer">
                 <div class="header">
@@ -251,7 +251,7 @@
                 <button class="button" id="resetLeaderboardButton">🔄️ Reset Leaderboard</button>
             </div>
         </div>
-        <div class="miscellaneousContainer">
+        <div class="miscellaneousContainer outline window">
             <div id="whatButton">?</div>
             <button class="button" id="importCar">📥 Import Car</button>
             <button class="button" id="resetSettingsButton">🔄️ Reset Settings</button>

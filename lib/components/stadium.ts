@@ -47,8 +47,8 @@ export class Stadium {
     /* ----------------------------------- UI ----------------------------------- */
 
     private static stadiumContainer = null as unknown as HTMLDivElement;
-    public static STADIUM_WIDTH = 600;
-    public static STADIUM_HEIGHT = 400;
+    public static STADIUM_WIDTH: number;
+    public static STADIUM_HEIGHT: number;
     private static trackCanvas = null as unknown as HTMLCanvasElement;
     private static trackCtx = null as unknown as CanvasRenderingContext2D;
     private static carCanvas = null as unknown as HTMLCanvasElement;
@@ -192,7 +192,7 @@ export class Stadium {
         const hintCtx = hintCanvas?.getContext('2d') ?? null;
 
         if (!stadiumContainer || !trackCanvas || !carCanvas || !hintCanvas || !clearStadiumButton || !trackCtx || !carCtx || !hintCtx) {
-            throw new Error('Failed to initialize stadium UI elements.');
+            throw new Error('Failed to initialise stadium UI elements.');
         }
 
         this.stadiumContainer = stadiumContainer;
@@ -207,6 +207,7 @@ export class Stadium {
         this.STADIUM_HEIGHT = this.stadiumContainer.clientHeight;
 
         document.addEventListener('DOMContentLoaded', () => { this.recalculateCanvasSizes(); });
+        window.addEventListener('blur', () => { this.redrawHint(NaN, NaN); });
 
         let isLeftMouseDown = false;
         let isRightMouseDown = false;
@@ -217,6 +218,7 @@ export class Stadium {
             event.preventDefault();
         });
         document.addEventListener('mousedown', (event: MouseEvent) => {
+            if (!stadiumContainer.contains(event.target as Node)) { return; }
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
 
             switch (event.button) {
