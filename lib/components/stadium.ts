@@ -67,12 +67,22 @@ export class Stadium {
     private static trackData: Uint8ClampedArray<ArrayBufferLike> = new Uint8ClampedArray();
 
 
-    private static redrawHint(x: number, y: number) {
+    private static redrawHint(x: number, y: number, altCrosshairStyle?: boolean) {
         Stadium.hintCtx.clearRect(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT);
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
         drawCircle(Stadium.hintCtx, Stadium.STADIUM_WIDTH / 2, Stadium.STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
+
+        const CURSOR_CROSSHAIR_LENGTH = 6;
+        const CURSOR_CROSSHAIR_WIDTH = 1;
         drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, '#ffffff', true); // Cursor
+        if (!altCrosshairStyle) {
+            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH, y, x + CURSOR_CROSSHAIR_LENGTH, y, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor crosshair
+            drawLine(Stadium.hintCtx, x, y - CURSOR_CROSSHAIR_LENGTH, x, y + CURSOR_CROSSHAIR_LENGTH, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor crosshair
+        } else {
+            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor alt crosshair
+            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor alt crosshair
+        }
     }
 
     public static drawCars() {
@@ -282,7 +292,7 @@ export class Stadium {
         }
         function handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
             if (isOnCanvas || isLeftMouseDown || isRightMouseDown) {
-                Stadium.redrawHint(x, y);
+                Stadium.redrawHint(x, y, isRightMouseDown);
             } else {
                 Stadium.redrawHint(NaN, NaN);
             }
