@@ -14,11 +14,42 @@ export class Stadium {
     public static cars: Car[] = [];
     public static isRaceMode = false;
 
+    // Tracks the active requestAnimationFrame ID to allow cancellation/resets
+    private static animationFrameId: number | null = null;
+
+    // Hint variables used to throttle high-frequency pointer moves
+    private static hintX = NaN;
+    private static hintY = NaN;
+    private static altStyle = false;
+    private static isHintActive = false;
+
     public static tickDo() {
         NaturalSelection.updateTickCounter();
         this.processCars();
         this.drawCars();
         this.cars.forEach(this.updateRoadScore);
+    }
+
+    /**
+     * The unified update & render pipeline loop tied to screen refresh rate
+     */
+    private static loop() {
+        // Only progress cars and logic if running simulation/race mode
+        if (Stadium.isRaceMode) {
+            Stadium.tickDo();
+        } else {
+            // Even if the race hasn't started, keep drawing cars when spawning/static
+            Stadium.drawCars();
+        }
+
+        // Handle the deferred UI/Crosshair render tick
+        if (Stadium.isHintActive) {
+            Stadium.redrawHintCanvas(Stadium.hintX, Stadium.hintY, Stadium.altStyle);
+        } else {
+            Stadium.redrawHintCanvas(NaN, NaN);
+        }
+
+        Stadium.animationFrameId = requestAnimationFrame(() => Stadium.loop());
     }
 
     private static processCars() {
@@ -37,7 +68,6 @@ export class Stadium {
 
         const car = new Car(x, y, Garage.probeAngles);
         this.cars.push(car);
-        this.drawCars();
     }
 
     private static updateTrackData() {
@@ -185,7 +215,11 @@ export class Stadium {
         this.carCanvas.height = this.STADIUM_HEIGHT;
         this.hintCanvas.width = this.STADIUM_WIDTH;
         this.hintCanvas.height = this.STADIUM_HEIGHT;
-        this.redrawHintCanvas(NaN, NaN);
+
+        Stadium.hintX = NaN;
+        Stadium.hintY = NaN;
+        Stadium.isHintActive = false;
+
         Stadium.updateTrackData();
     }
 
@@ -216,7 +250,17 @@ export class Stadium {
         this.STADIUM_WIDTH = this.stadiumContainer.clientWidth;
         this.STADIUM_HEIGHT = this.stadiumContainer.clientHeight;
 
-        document.addEventListener('DOMContentLoaded', () => { this.recalculateCanvasSizes(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            this.recalculateCanvasSizes();
+            // Kick off the loop animation cycle once canvases are ready
+            if (!Stadium.animationFrameId) {
+                Stadium.loop();
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            Stadium.isHintActive = false;
+        });
 
         let isLeftMouseDown = false;
         let isRightMouseDown = false;
@@ -226,6 +270,7 @@ export class Stadium {
         document.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });
+
         document.addEventListener('pointerdown', (event: PointerEvent) => {
             if (!stadiumContainer.contains(event.target as Node)) { return; }
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY, true);
@@ -244,18 +289,22 @@ export class Stadium {
                     return;
             }
         });
+
         document.addEventListener('pointermove', (event: PointerEvent) => {
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
             const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
             handleMouseMove(x, y, isOnCanvas);
         });
+
         document.addEventListener('pointerup', (event: PointerEvent) => {
             handleMouseUp();
             if (event.pointerType === 'mouse') {
                 const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
-                this.redrawHintCanvas(x, y);
+                Stadium.hintX = x;
+                Stadium.hintY = y;
+                Stadium.isHintActive = true;
             } else {
-                this.redrawHintCanvas(NaN, NaN);
+                Stadium.isHintActive = false;
             }
         });
 
@@ -267,6 +316,7 @@ export class Stadium {
             const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
             handleMouseMove(x, y, isOnCanvas);
         }
+
         function handleRightClick(x: number, y: number, target: EventTarget | null) {
             if (shouldDiscardEvent(target)) { return; }
 
@@ -275,12 +325,13 @@ export class Stadium {
             const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
             handleMouseMove(x, y, isOnCanvas);
         }
+
         function handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
-            if (isOnCanvas || isLeftMouseDown || isRightMouseDown) {
-                Stadium.redrawHintCanvas(x, y, isRightMouseDown);
-            } else {
-                Stadium.redrawHintCanvas(NaN, NaN);
-            }
+            // Stage changes for requestAnimationFrame thread instead of immediate execution
+            Stadium.hintX = x;
+            Stadium.hintY = y;
+            Stadium.altStyle = isRightMouseDown;
+            Stadium.isHintActive = isOnCanvas || isLeftMouseDown || isRightMouseDown;
 
             if (isLeftMouseDown) {
                 drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
@@ -307,12 +358,14 @@ export class Stadium {
                 Stadium.updateTrackData();
             }
         }
+
         function handleMouseUp() {
             isLeftMouseDown = false;
             isRightMouseDown = false;
             previousX = undefined;
             previousY = undefined;
         }
+
         function shouldDiscardEvent(target: EventTarget | null): boolean {
             return target instanceof HTMLInputElement
                 || target instanceof HTMLTextAreaElement
