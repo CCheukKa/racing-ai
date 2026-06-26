@@ -157,10 +157,11 @@ input:user-invalid {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
     text-align: center;
-
-    translate: calc(var(--padding) * -1) calc(var(--padding) * -1);
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
 }
 
 #mainContainer {
