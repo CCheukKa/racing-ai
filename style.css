@@ -2,6 +2,8 @@
     --grass-colour: #006000;
     --window-colour: #112233;
     --window-margin: 10px;
+    --backdrop-filter: var(--backdrop-filter-blur);
+    --backdrop-filter-blur: blur(5px);
 }
 
 * {
@@ -34,6 +36,10 @@ body {
     overflow: hidden;
     overscroll-behavior: none;
     color-scheme: light;
+}
+
+body.optimise {
+    --backdrop-filter: ;
 }
 
 body.raceMode {
@@ -170,7 +176,7 @@ input:user-invalid {
         z-index: 99;
         pointer-events: auto;
         background-color: color-mix(in srgb, var(--window-colour), transparent 20%);
-        backdrop-filter: blur(5px);
+        backdrop-filter: var(--backdrop-filter);
         overflow: hidden;
 
         &>summary {
@@ -771,6 +777,14 @@ input:user-invalid {
         gap: 10px;
         font-size: 14px;
 
+        .fpsContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
         #resetSettingsButton {
             --buttonColour: #ff8888;
         }
@@ -905,7 +919,7 @@ input:user-invalid {
     pointer-events: none;
     position: absolute;
     background-color: rgba(from var(--carColour, #000000) r g b / 0.8);
-    backdrop-filter: blur(5px);
+    backdrop-filter: var(--backdrop-filter);
     translate: 0 -100%;
     color: #ffffff;
     display: flex;

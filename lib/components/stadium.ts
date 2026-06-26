@@ -4,6 +4,7 @@ import { Car } from "../cars";
 import { Garage } from "./garage";
 import { MathExtra } from "../utils/mathExtra";
 import { drawCircle, drawLine, drawRectangle, getCanvasPoint } from "@lib/utils/canvasUtils";
+import { PerformanceMonitor } from "@lib/utils/performanceMonitor";
 
 export class Stadium {
 
@@ -34,6 +35,8 @@ export class Stadium {
      * The unified update & render pipeline loop tied to screen refresh rate
      */
     private static loop() {
+        PerformanceMonitor.checkPerformance();
+
         // Only progress cars and logic if running simulation/race mode
         if (Stadium.isRaceMode) {
             Stadium.tickDo();
