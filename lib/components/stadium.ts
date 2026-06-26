@@ -226,7 +226,8 @@ export class Stadium {
         document.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });
-        document.addEventListener('mousedown', (event: MouseEvent) => {
+        document.addEventListener('pointerdown', (event: PointerEvent) => {
+            if (!stadiumContainer.contains(event.target as Node)) { return; }
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
 
             switch (event.button) {
@@ -243,31 +244,19 @@ export class Stadium {
                     return;
             }
         });
-        document.addEventListener('touchstart', (event: TouchEvent) => {
-            if (!event.touches[0]) { return; }
-
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
-
-            handleLeftClick(x, y, event.touches[0].target);
-        });
-        document.addEventListener('mousemove', (event: MouseEvent) => {
+        document.addEventListener('pointermove', (event: PointerEvent) => {
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
-
-            handleMouseMove(x, y);
+            const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         });
-        document.addEventListener('touchmove', (event: TouchEvent) => {
-            if (!event.touches[0]) { return; }
-
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
-
-            handleMouseMove(x, y);
-        });
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('pointerup', (event: PointerEvent) => {
             handleMouseUp();
-        });
-        document.addEventListener('touchend', () => {
-            handleMouseUp();
-            this.redrawHintCanvas(NaN, NaN);
+            if (event.pointerType === 'mouse') {
+                const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
+                this.redrawHintCanvas(x, y);
+            } else {
+                this.redrawHintCanvas(NaN, NaN);
+            }
         });
 
         function handleLeftClick(x: number, y: number, target: EventTarget | null) {
@@ -275,17 +264,23 @@ export class Stadium {
 
             isLeftMouseDown = true;
             isRightMouseDown = false;
-            handleMouseMove(x, y);
+            const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         }
         function handleRightClick(x: number, y: number, target: EventTarget | null) {
             if (shouldDiscardEvent(target)) { return; }
 
             isLeftMouseDown = false;
             isRightMouseDown = true;
-            handleMouseMove(x, y);
+            const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
+            handleMouseMove(x, y, isOnCanvas);
         }
-        function handleMouseMove(x: number, y: number) {
-            Stadium.redrawHintCanvas(x, y, isRightMouseDown);
+        function handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
+            if (isOnCanvas || isLeftMouseDown || isRightMouseDown) {
+                Stadium.redrawHintCanvas(x, y, isRightMouseDown);
+            } else {
+                Stadium.redrawHintCanvas(NaN, NaN);
+            }
 
             if (isLeftMouseDown) {
                 drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
