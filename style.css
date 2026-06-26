@@ -20,6 +20,12 @@
     }
 }
 
+html {
+    overflow: hidden;
+    overscroll-behavior: none;
+    user-select: none;
+}
+
 body {
     background-color: #112233;
     font-family: 'Roboto', Arial, sans-serif;
@@ -36,6 +42,7 @@ body {
     overflow: hidden;
     overscroll-behavior: none;
     color-scheme: light;
+    user-select: none;
 }
 
 body.lowPerformanceMode {
@@ -873,6 +880,7 @@ input:user-invalid {
     text-shadow: 0 0 10px #000000;
     top: -100vh;
     left: -100vw;
+    display: none;
 
     .right {
         display: flex;
