@@ -227,9 +227,9 @@ export class Stadium {
         document.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });
-        document.addEventListener('mousedown', (event: MouseEvent) => {
+        document.addEventListener('pointerdown', (event: PointerEvent) => {
             if (!stadiumContainer.contains(event.target as Node)) { return; }
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
+            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY, true);
 
             switch (event.button) {
                 case 0: // Left button
@@ -245,33 +245,19 @@ export class Stadium {
                     return;
             }
         });
-        document.addEventListener('touchstart', (event: TouchEvent) => {
-            if (!event.touches[0]) { return; }
-
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
-
-            handleLeftClick(x, y, event.touches[0].target);
-        });
-        document.addEventListener('mousemove', (event: MouseEvent) => {
+        document.addEventListener('pointermove', (event: PointerEvent) => {
             const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
-
             const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
             handleMouseMove(x, y, isOnCanvas);
         });
-        document.addEventListener('touchmove', (event: TouchEvent) => {
-            if (!event.touches[0]) { return; }
-
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.touches[0].clientX, event.touches[0].clientY);
-
-            const isOnCanvas = this.stadiumContainer.contains(event.touches[0].target as Node);
-            handleMouseMove(x, y, isOnCanvas);
-        });
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('pointerup', (event: PointerEvent) => {
             handleMouseUp();
-        });
-        document.addEventListener('touchend', () => {
-            handleMouseUp();
-            this.redrawHintCanvas(NaN, NaN);
+            if (event.pointerType === 'mouse') {
+                const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
+                this.redrawHintCanvas(x, y);
+            } else {
+                this.redrawHintCanvas(NaN, NaN);
+            }
         });
 
         function handleLeftClick(x: number, y: number, target: EventTarget | null) {
