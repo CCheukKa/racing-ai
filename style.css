@@ -21,6 +21,12 @@
     }
 }
 
+html {
+    overflow: hidden;
+    overscroll-behavior: none;
+    user-select: none;
+}
+
 body {
     font-family: 'Roboto', Arial, sans-serif;
     font-weight: bold;
@@ -36,6 +42,7 @@ body {
     overflow: hidden;
     overscroll-behavior: none;
     color-scheme: light;
+    user-select: none;
 }
 
 body.optimise {
@@ -933,6 +940,7 @@ input:user-invalid {
     text-shadow: 0 0 10px #000000;
     top: -100vh;
     left: -100vw;
+    display: none;
 
     .right {
         display: flex;
