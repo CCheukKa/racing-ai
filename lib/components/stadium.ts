@@ -49,7 +49,7 @@ export class Stadium {
     private static stadiumContainer = null as unknown as HTMLDivElement;
     public static STADIUM_WIDTH: number;
     public static STADIUM_HEIGHT: number;
-    private static trackCanvas = null as unknown as HTMLCanvasElement;
+    public static trackCanvas = null as unknown as HTMLCanvasElement;
     private static trackCtx = null as unknown as CanvasRenderingContext2D;
     private static carCanvas = null as unknown as HTMLCanvasElement;
     private static carCtx = null as unknown as CanvasRenderingContext2D;

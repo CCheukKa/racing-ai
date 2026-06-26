@@ -3,6 +3,7 @@ import { CookieHandler } from "./utils/cookieHandler";
 import { Leaderboard } from "./components/leaderboard";
 import { Stadium } from "./components/stadium";
 import { AppState } from "./appState";
+import { recacheCanvasPointCache } from "./utils/canvasUtils";
 
 export class UI {
     private static _inputsLocked = false;
@@ -26,6 +27,9 @@ export class UI {
             this.recalculateWhatTextSizes();
             this.bindTips();
             this.bindMiscellaneousUi();
+        });
+        window.addEventListener("resize", () => {
+            recacheCanvasPointCache(Stadium.trackCanvas);
         });
     }
 
