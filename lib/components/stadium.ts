@@ -239,7 +239,7 @@ export class Stadium {
         const hintCtx = hintCanvas?.getContext('2d') ?? null;
 
         if (!stadiumContainer || !trackCanvas || !carCanvas || !hintCanvas || !clearStadiumButton || !trackCtx || !carCtx || !hintCtx) {
-            throw new Error('Failed to initialize stadium UI elements.');
+            throw new Error('Failed to initialise stadium UI elements.');
         }
 
         this.stadiumContainer = stadiumContainer;
