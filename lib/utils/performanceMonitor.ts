@@ -8,19 +8,27 @@ export class PerformanceMonitor {
     private static readonly FPS_THRESHOLD = 45;
     private static readonly FRAME_DROP_COUNT_LIMIT = 30;
 
+    private static readonly FRAME_DELTA_HISTORY_SIZE = 30;
+    private static frameDeltas: number[] = [];
+
     public static checkPerformance() {
         const now = performance.now();
         const delta = now - this.lastFrameTime;
         this.lastFrameTime = now;
-        const currentFps = 1000 / delta;
 
-        this.fpsDisplaySpan.textContent = currentFps.toFixed(2);
+        this.frameDeltas.push(delta);
+        if (this.frameDeltas.length > this.FRAME_DELTA_HISTORY_SIZE) {
+            this.frameDeltas.shift();
+        }
+        const averageFPS = 1000 / (this.frameDeltas.reduce((sum, d) => sum + d, 0) / this.frameDeltas.length);
+        this.fpsDisplaySpan.textContent = averageFPS.toFixed(2);
 
         if (this.isLowPerformanceMode) { return; }
 
         // Ignore the very first frames or massive lag spikes from loading/tab switching
         if (delta > 200) { return; }
 
+        const currentFps = 1000 / delta;
         if (currentFps < this.FPS_THRESHOLD) {
             this.lowFpsFrameCount++;
             if (this.lowFpsFrameCount >= this.FRAME_DROP_COUNT_LIMIT) {
