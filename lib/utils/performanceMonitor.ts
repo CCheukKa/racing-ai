@@ -42,7 +42,7 @@ export class PerformanceMonitor {
     public static enableLowPerformanceMode() {
         this.isLowPerformanceMode = true;
         console.warn("Performance degradation detected. Disabling expensive UI blurs.");
-        document.body.classList.add('optimise');
+        document.body.classList.add('lowPerformanceMode');
         this.lowPerformanceIndicator.textContent = "⚠️";
     }
 

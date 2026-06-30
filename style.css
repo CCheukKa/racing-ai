@@ -45,7 +45,7 @@ body {
     user-select: none;
 }
 
-body.optimise {
+body.lowPerformanceMode {
     --backdrop-filter: ;
 }
 
