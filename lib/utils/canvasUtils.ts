@@ -87,13 +87,26 @@ export function mutateColour(colour: string, scale: number): string {
     return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
 }
 
-export function getCanvasPoint(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
+const canvasPointCache = new WeakMap<HTMLCanvasElement, { rect: DOMRect, scaleX: number, scaleY: number }>();
+export function recacheCanvasPointCache(canvas: HTMLCanvasElement) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-
-    return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY,
-    };
+    canvasPointCache.set(canvas, { rect, scaleX, scaleY });
+    return { rect, scaleX, scaleY };
+}
+export function getCanvasPoint(canvas: HTMLCanvasElement, clientX: number, clientY: number, recache?: boolean) {
+    if (recache || !canvasPointCache.has(canvas)) {
+        const { rect, scaleX, scaleY } = recacheCanvasPointCache(canvas);
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY,
+        };
+    } else {
+        const { rect, scaleX, scaleY } = canvasPointCache.get(canvas)!;
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY,
+        };
+    }
 }

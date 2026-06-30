@@ -49,7 +49,7 @@ export class Stadium {
     private static stadiumContainer = null as unknown as HTMLDivElement;
     public static STADIUM_WIDTH = 600;
     public static STADIUM_HEIGHT = 400;
-    private static trackCanvas = null as unknown as HTMLCanvasElement;
+    public static trackCanvas = null as unknown as HTMLCanvasElement;
     private static trackCtx = null as unknown as CanvasRenderingContext2D;
     private static carCanvas = null as unknown as HTMLCanvasElement;
     private static carCtx = null as unknown as CanvasRenderingContext2D;
@@ -228,7 +228,7 @@ export class Stadium {
         });
         document.addEventListener('pointerdown', (event: PointerEvent) => {
             if (!stadiumContainer.contains(event.target as Node)) { return; }
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
+            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY, true);
 
             switch (event.button) {
                 case 0: // Left button
