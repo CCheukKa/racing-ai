@@ -6,8 +6,10 @@ import { Stadium } from '@lib/components/stadium';
 import { Garage } from '@lib/components/garage';
 import { NeuralNetwork } from '@lib/components/neuralNetwork';
 import { NaturalSelection } from '@lib/components/naturalSelection';
+import { PerformanceMonitor } from '@lib/utils/performanceMonitor';
 
 CookieHandler.init();
+PerformanceMonitor.init();
 
 Stadium.init();
 Garage.init();
