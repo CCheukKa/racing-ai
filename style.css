@@ -1,16 +1,18 @@
 :root {
     --grass-colour: #006000;
     --window-colour: #112233;
-    --window-margin: 10px;
+    --window-margin: 5px;
     --backdrop-filter: var(--backdrop-filter-blur);
     --backdrop-filter-blur: blur(5px);
+    --panelAnimationDuration: 0.1s;
 }
 
 * {
-    /* outline: 1px solid white; */
+    /* outline: 1px solid #ffffff40; */
     box-sizing: border-box;
     user-select: none;
     transition: all 0.2s ease-in-out;
+    interpolate-size: allow-keywords;
 
     &:disabled {
         cursor: not-allowed;
@@ -43,6 +45,7 @@ body {
     overscroll-behavior: none;
     color-scheme: light;
     user-select: none;
+    transition: none;
 }
 
 body.lowPerformanceMode {
@@ -166,60 +169,144 @@ input:user-invalid {
 
 #mainContainer {
     display: flex;
-    height: 100svh;
-    width: 100vw;
-    overflow: hidden;
-    position: relative;
-    justify-content: center;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    box-sizing: border-box;
+    padding: 10px;
     background-color: var(--window-colour);
+    isolation: isolate;
+    gap: 10px;
+    transition: none;
 
     &>div {
         overflow: hidden;
     }
 
-    &>.window {
-        position: absolute;
-        margin: var(--window-margin);
-        z-index: 99;
-        pointer-events: auto;
-        background-color: color-mix(in srgb, var(--window-colour), transparent 20%);
-        backdrop-filter: var(--backdrop-filter);
-        overflow: hidden;
+    .panel {
+        position: relative;
+        height: 100%;
+        min-width: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: row;
 
-        &>summary {
-            padding: 10px 15px;
-            background-color: #ffffff30;
+        &>* {
+            height: 100%;
+        }
+
+        &>.panelToggle {
+            appearance: none;
+            -webkit-appearance: none;
+            height: 40%;
+            min-height: max-content;
+            padding-block: 20px;
+            width: 20px;
+            background-color: #ffffff20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            position: relative;
-            font-size: 20px;
+            border-radius: 5px;
+            margin: 0;
+            box-shadow: 0 0 5px #ffffff40 inset;
 
-            &::marker {
-                font-family: monospace;
-                content: "+ ";
+            &:checked {
+                background-color: #ffffff10;
+            }
+
+            &::before {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #ffffff;
+                font-size: 20px;
+                transition: all var(--panelAnimationDuration) ease-in-out;
+                text-shadow: 0 0.8lh 0 #ffffff, 0 -0.8lh 0 #ffffff;
+            }
+
+            &:checked::before {
+                scale: -1 1;
             }
         }
 
-        &[open]>summary {
-            font-size: inherit;
-            padding: 5px 10px;
+        .panelContent {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: calc-size(fit-content) fit-content;
+            padding: 10px;
+            position: relative;
+            transition: all var(--panelAnimationDuration) ease-in-out;
+        }
 
-            &::marker {
-                content: "- ";
+        &:not(:has(.panelToggle:checked))>.panelContent {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        & .window {
+            margin: var(--window-margin);
+            pointer-events: auto;
+            background-color: color-mix(in srgb, var(--window-colour), transparent 20%);
+            overflow: hidden;
+            width: 100%;
+            /* flex-grow: 1; */
+
+            &>summary {
+                padding: 10px 15px;
+                background-color: #ffffff30;
+                cursor: pointer;
+                position: relative;
+                font-size: 20px;
             }
         }
     }
 
-    &>#stadiumContainer {
+    .leftPanel {
+        flex-direction: row-reverse;
+
+        .panelToggle::before {
+            content: ">";
+        }
+
+        &:not(:has(.panelToggle:checked))>.panelContent {
+            position: absolute;
+            top: 0;
+            right: 20px;
+            translate: -100% 0;
+        }
+    }
+
+    .rightPanel {
+        .panelToggle::before {
+            content: "<";
+        }
+
+        &:not(:has(.panelToggle:checked))>.panelContent {
+            position: absolute;
+            top: 0;
+            left: 20px;
+            translate: 100% 0;
+        }
+    }
+
+    .stadiumFrame {
+        height: 100%;
+        flex-grow: 1;
+        flex-shrink: 100;
         display: flex;
-        height: 95svh;
-        width: 95vw;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         position: relative;
-        overscroll-behavior: none;
-        background-color: var(--grass-colour);
+        overflow: hidden;
+        isolation: isolate;
 
         .tutorialText {
             position: absolute;
@@ -257,29 +344,42 @@ input:user-invalid {
             }
         }
 
-        canvas {
+        &>#stadiumContainer {
             position: absolute;
-            cursor: none;
+            z-index: 0;
+            display: flex;
+            height: 100%;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
             overscroll-behavior: none;
-        }
+            background-color: var(--grass-colour);
+            overflow: hidden;
+            isolation: isolate;
 
-        #hintCanvas {
-            z-index: 10;
-        }
+            canvas {
+                position: absolute;
+                cursor: none;
+                overscroll-behavior: none;
+            }
 
-        #carCanvas {
-            z-index: 5;
-        }
+            #hintCanvas {
+                z-index: 10;
+            }
 
-        #trackCanvas {
-            z-index: 2;
+            #carCanvas {
+                z-index: 5;
+            }
+
+            #trackCanvas {
+                z-index: 2;
+            }
         }
     }
 
-    &>.garageWindow {
-        top: 0;
-        right: 0;
-
+    & .garageWindow {
         &>.garageContainer {
             display: flex;
             flex-direction: row;
@@ -321,7 +421,7 @@ input:user-invalid {
             }
 
             #garageCanvas {
-                background-color: color-mix(in srgb, var(--grass-colour), transparent 50%);
+                background-color: var(--grass-colour);
             }
 
             .probeAngleContainer {
@@ -352,10 +452,7 @@ input:user-invalid {
         }
     }
 
-    &>.neuralNetworkWindow {
-        bottom: 0;
-        right: 0;
-
+    & .neuralNetworkWindow {
         &>.neuralNetworkContainer {
             display: flex;
             flex-direction: row;
@@ -464,10 +561,7 @@ input:user-invalid {
         }
     }
 
-    &>.naturalSelectionWindow {
-        top: 0;
-        left: 0;
-
+    & .naturalSelectionWindow {
         &>.naturalSelectionContainer {
             --padding: 10px;
             display: flex;
@@ -637,10 +731,7 @@ input:user-invalid {
         }
     }
 
-    &>.leaderboardWindow {
-        bottom: 0;
-        left: 0;
-
+    & .leaderboardWindow {
         &>.leaderboardContainer {
             display: flex;
             flex-direction: column;
@@ -778,7 +869,8 @@ input:user-invalid {
         left: 50%;
         transform: translateX(-50%);
         padding: 10px;
-        display: flex;
+        display: none;
+        /* display: flex; */
         flex-direction: column;
         align-items: flex-end;
         justify-content: flex-start;

@@ -29,8 +29,20 @@ export class UI {
             this.bindMiscellaneousUi();
         });
         window.addEventListener("resize", () => {
-            recacheCanvasPointCache(Stadium.trackCanvas);
+            handleResize();
         });
+        Array.from(document.getElementsByClassName("panelToggle")).forEach((toggle) => {
+            toggle.addEventListener("change", () => {
+                handleResize();
+            });
+        });
+
+        function handleResize() {
+            recacheCanvasPointCache(Stadium.trackCanvas);
+            const lastPointerMove = Stadium.lastPointerMove;
+            if (!lastPointerMove) { return; }
+            Stadium.handlePointerMove(lastPointerMove);
+        }
     }
 
     private static recalculateWhatTextSizes() {

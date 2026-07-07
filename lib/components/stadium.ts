@@ -79,7 +79,7 @@ export class Stadium {
 
     /* ----------------------------------- UI ----------------------------------- */
 
-    private static stadiumContainer = null as unknown as HTMLDivElement;
+    public static stadiumContainer = null as unknown as HTMLDivElement;
     public static STADIUM_WIDTH: number;
     public static STADIUM_HEIGHT: number;
     public static trackCanvas = null as unknown as HTMLCanvasElement;
@@ -91,6 +91,8 @@ export class Stadium {
 
     private static clearStadiumButton = null as unknown as HTMLButtonElement;
 
+    public static lastPointerMove: PointerEvent | null = null;
+
     public static readonly TRACK_COLOUR = '#e0e0e0';
     private static readonly TRACK_WIDTH = 50;
 
@@ -99,8 +101,13 @@ export class Stadium {
 
     private static trackData: Uint8ClampedArray<ArrayBufferLike> = new Uint8ClampedArray();
 
+    private static isLeftMouseDown = false;
+    private static isRightMouseDown = false;
+    private static previousX: number | undefined;
+    private static previousY: number | undefined;
 
-    private static redrawHintCanvas(x: number, y: number, altCrosshairStyle?: boolean) {
+
+    public static redrawHintCanvas(x: number, y: number, altCrosshairStyle?: boolean) {
         Stadium.hintCtx.clearRect(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT);
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
@@ -250,8 +257,8 @@ export class Stadium {
         this.hintCanvas = hintCanvas;
         this.hintCtx = hintCtx;
         this.clearStadiumButton = clearStadiumButton;
-        this.STADIUM_WIDTH = this.stadiumContainer.clientWidth;
-        this.STADIUM_HEIGHT = this.stadiumContainer.clientHeight;
+        this.STADIUM_WIDTH = document.body.clientWidth;
+        this.STADIUM_HEIGHT = document.body.clientHeight;
 
         document.addEventListener('DOMContentLoaded', () => {
             this.recalculateCanvasSizes();
@@ -264,11 +271,6 @@ export class Stadium {
         window.addEventListener('blur', () => {
             Stadium.isHintActive = false;
         });
-
-        let isLeftMouseDown = false;
-        let isRightMouseDown = false;
-        let previousX: number | undefined;
-        let previousY: number | undefined;
 
         document.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
@@ -294,9 +296,8 @@ export class Stadium {
         });
 
         document.addEventListener('pointermove', (event: PointerEvent) => {
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
-            const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
-            handleMouseMove(x, y, isOnCanvas);
+            this.lastPointerMove = event;
+            this.handlePointerMove(event);
         });
 
         document.addEventListener('pointerup', (event: PointerEvent) => {
@@ -314,59 +315,26 @@ export class Stadium {
         function handleLeftClick(x: number, y: number, target: EventTarget | null) {
             if (shouldDiscardEvent(target)) { return; }
 
-            isLeftMouseDown = true;
-            isRightMouseDown = false;
+            Stadium.isLeftMouseDown = true;
+            Stadium.isRightMouseDown = false;
             const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
-            handleMouseMove(x, y, isOnCanvas);
+            Stadium.handleMouseMove(x, y, isOnCanvas);
         }
 
         function handleRightClick(x: number, y: number, target: EventTarget | null) {
             if (shouldDiscardEvent(target)) { return; }
 
-            isLeftMouseDown = false;
-            isRightMouseDown = true;
+            Stadium.isLeftMouseDown = false;
+            Stadium.isRightMouseDown = true;
             const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
-            handleMouseMove(x, y, isOnCanvas);
-        }
-
-        function handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
-            // Stage changes for requestAnimationFrame thread instead of immediate execution
-            Stadium.hintX = x;
-            Stadium.hintY = y;
-            Stadium.altStyle = isRightMouseDown;
-            Stadium.isHintActive = isOnCanvas || isLeftMouseDown || isRightMouseDown;
-
-            if (isLeftMouseDown) {
-                drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
-                if (previousX !== undefined && previousY !== undefined) {
-                    drawLine(Stadium.trackCtx, previousX, previousY, x, y, Stadium.TRACK_WIDTH, Stadium.TRACK_COLOUR);
-                }
-                previousX = x;
-                previousY = y;
-
-                Stadium.updateTrackData();
-            }
-            if (isRightMouseDown) {
-                const ERASE_BUFFER_RADIUS = 4;
-
-                Stadium.trackCtx.globalCompositeOperation = 'destination-out';
-                drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
-                if (previousX !== undefined && previousY !== undefined) {
-                    drawLine(Stadium.trackCtx, previousX, previousY, x, y, Stadium.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
-                }
-                Stadium.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
-                previousX = x;
-                previousY = y;
-
-                Stadium.updateTrackData();
-            }
+            Stadium.handleMouseMove(x, y, isOnCanvas);
         }
 
         function handleMouseUp() {
-            isLeftMouseDown = false;
-            isRightMouseDown = false;
-            previousX = undefined;
-            previousY = undefined;
+            Stadium.isLeftMouseDown = false;
+            Stadium.isRightMouseDown = false;
+            Stadium.previousX = undefined;
+            Stadium.previousY = undefined;
         }
 
         function shouldDiscardEvent(target: EventTarget | null): boolean {
@@ -379,7 +347,46 @@ export class Stadium {
         this.clearStadiumButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to clear the stadium? This will remove all track data.')) { return; }
             this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
-            Stadium.updateTrackData();
+            this.updateTrackData();
         });
+    }
+
+    public static handlePointerMove(event: PointerEvent) {
+        const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
+        const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
+        this.handleMouseMove(x, y, isOnCanvas);
+    }
+
+    private static handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
+        // Stage changes for requestAnimationFrame thread instead of immediate execution
+        Stadium.hintX = x;
+        Stadium.hintY = y;
+        Stadium.altStyle = this.isRightMouseDown;
+        Stadium.isHintActive = isOnCanvas || this.isLeftMouseDown || this.isRightMouseDown;
+
+        if (this.isLeftMouseDown) {
+            drawCircle(this.trackCtx, x, y, this.TRACK_WIDTH / 2, this.TRACK_COLOUR);
+            if (this.previousX !== undefined && this.previousY !== undefined) {
+                drawLine(this.trackCtx, this.previousX, this.previousY, x, y, this.TRACK_WIDTH, this.TRACK_COLOUR);
+            }
+            this.previousX = x;
+            this.previousY = y;
+
+            this.updateTrackData();
+        }
+        if (this.isRightMouseDown) {
+            const ERASE_BUFFER_RADIUS = 4;
+
+            this.trackCtx.globalCompositeOperation = 'destination-out';
+            drawCircle(this.trackCtx, x, y, this.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
+            if (this.previousX !== undefined && this.previousY !== undefined) {
+                drawLine(this.trackCtx, this.previousX, this.previousY, x, y, this.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
+            }
+            this.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
+            this.previousX = x;
+            this.previousY = y;
+
+            this.updateTrackData();
+        }
     }
 }
