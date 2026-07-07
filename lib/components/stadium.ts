@@ -100,21 +100,28 @@ export class Stadium {
     private static trackData: Uint8ClampedArray<ArrayBufferLike> = new Uint8ClampedArray();
 
 
-    private static redrawHintCanvas(x: number, y: number, altCrosshairStyle?: boolean) {
+    private static redrawHintCanvas(x: number, y: number, isDelete?: boolean) {
         Stadium.hintCtx.clearRect(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT);
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
         drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
         drawCircle(Stadium.hintCtx, Stadium.STADIUM_WIDTH / 2, Stadium.STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
 
-        const CURSOR_CROSSHAIR_LENGTH = 6;
-        const CURSOR_CROSSHAIR_WIDTH = 1;
-        drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, '#ffffff', true); // Cursor
-        if (!altCrosshairStyle) {
-            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH, y, x + CURSOR_CROSSHAIR_LENGTH, y, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor crosshair
-            drawLine(Stadium.hintCtx, x, y - CURSOR_CROSSHAIR_LENGTH, x, y + CURSOR_CROSSHAIR_LENGTH, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor crosshair
+        if (isNaN(x) || isNaN(y)) { return; }
+
+        if (!isDelete) {
+            const CURSOR_COLOUR = '#ffffff';
+            const CURSOR_CROSSHAIR_LENGTH = 6;
+            const CURSOR_CROSSHAIR_WIDTH = 1;
+            drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, CURSOR_COLOUR, true); // Cursor
+            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH, y, x + CURSOR_CROSSHAIR_LENGTH, y, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor crosshair
+            drawLine(Stadium.hintCtx, x, y - CURSOR_CROSSHAIR_LENGTH, x, y + CURSOR_CROSSHAIR_LENGTH, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor crosshair
         } else {
-            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor alt crosshair
-            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, '#ffffff'); // Cursor alt crosshair
+            const CURSOR_COLOUR = '#ff4444';
+            const CURSOR_CROSSHAIR_LENGTH = 8;
+            const CURSOR_CROSSHAIR_WIDTH = 3;
+            drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, CURSOR_COLOUR, true, 4); // Cursor
+            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor alt crosshair
+            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor alt crosshair
         }
     }
 
