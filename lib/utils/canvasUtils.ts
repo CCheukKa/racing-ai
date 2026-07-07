@@ -11,12 +11,12 @@ export function drawRectangle(ctx: CanvasRenderingContext2D, x: number, y: numbe
     }
 }
 
-export function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, colour: string, hollow?: boolean) {
+export function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, colour: string, hollow?: boolean, hollowWidth = 2) {
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     if (hollow) {
         ctx.strokeStyle = colour;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = hollowWidth;
         ctx.stroke();
     } else {
         ctx.fillStyle = colour;
