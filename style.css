@@ -281,6 +281,14 @@ input:user-invalid {
             margin: 0;
             box-shadow: 0 0 5px #ffffff40 inset;
 
+            &:hover {
+                background-color: #ffffff40;
+            }
+
+            &:hover:checked {
+                background-color: #ffffff20;
+            }
+
             &:checked {
                 background-color: #ffffff10;
             }
