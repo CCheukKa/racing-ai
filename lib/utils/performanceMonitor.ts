@@ -21,7 +21,7 @@ export class PerformanceMonitor {
             this.frameDeltas.shift();
         }
         const averageFPS = 1000 / (this.frameDeltas.reduce((sum, d) => sum + d, 0) / this.frameDeltas.length);
-        this.fpsDisplaySpan.textContent = averageFPS.toFixed(2);
+        this.fpsDisplaySpan.textContent = averageFPS.toFixed(0);
 
         if (this.isLowPerformanceMode) { return; }
 
