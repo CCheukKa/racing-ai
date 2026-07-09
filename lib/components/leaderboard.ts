@@ -88,7 +88,7 @@ export class Leaderboard {
         return;
     };
     private static updateCarPeekerContent(carData: SerialisedCarData) {
-        Leaderboard.carPeeker.style.setProperty('--carColour', carData.colour);
+        this.carPeeker.style.setProperty('--carColour', carData.colour);
 
         const carInputs: string[] = [];
         for (const option in carData.inputLayerOptions) {

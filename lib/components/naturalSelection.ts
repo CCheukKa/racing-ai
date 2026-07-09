@@ -131,8 +131,8 @@ export class NaturalSelection {
     }
 
     public static updateTickCounter() {
-        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
-        this.tickCounter.style.setProperty('--progress', `${MathExtra.clamp(Looper.tickCount / NaturalSelection.options.tickLimit.value, 0, 1) * 100}%`);
+        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${this.options.tickLimit.value}`;
+        this.tickCounter.style.setProperty('--progress', `${MathExtra.clamp(Looper.tickCount / this.options.tickLimit.value, 0, 1) * 100}%`);
     }
 
     /* ---------------------------------- Code ---------------------------------- */
@@ -142,7 +142,7 @@ export class NaturalSelection {
             if (CookieHandler.cookie?.naturalSelectionOptions) {
                 const cookieOptions = CookieHandler.cookie.naturalSelectionOptions as SerialisedNaturalSelectionOptions;
                 Object.keys(this.options).forEach((key) => {
-                    const typedKey = key as keyof typeof NaturalSelection.options;
+                    const typedKey = key as keyof typeof this.options;
                     if (cookieOptions[typedKey] !== undefined) {
                         this.options[typedKey].value = cookieOptions[typedKey];
                         this.options[typedKey].element.value = cookieOptions[typedKey].toString();
@@ -152,7 +152,7 @@ export class NaturalSelection {
             }
 
             Object.keys(this.options).forEach((key) => {
-                const typedKey = key as keyof typeof NaturalSelection.options;
+                const typedKey = key as keyof typeof this.options;
                 const inputOption = this.options[typedKey];
                 if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
 

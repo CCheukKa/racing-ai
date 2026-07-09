@@ -29,7 +29,7 @@ export class Garage {
 
     private static redraw() {
         const CAR_SCALE = 2;
-        Garage.redrawCarProbes(CAR_SCALE);
+        this.redrawCarProbes(CAR_SCALE);
     }
 
     public static redrawCarProbes(CAR_SCALE: number, probeAngles: number[] = this.probeAngles, carColour: string = this.GARAGE_CAR_COLOUR, canvas: HTMLCanvasElement = this.garageCanvas, ctx: CanvasRenderingContext2D = this.garageCtx) {

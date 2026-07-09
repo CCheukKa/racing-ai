@@ -94,7 +94,7 @@ export class NeuralNetwork {
     } as const;
 
     public static redraw() {
-        const { layerSizes, layerCount, nodeRadius } = NeuralNetwork.redrawNeuralNetwork();
+        const { layerSizes, layerCount, nodeRadius } = this.redrawNeuralNetwork();
         if (layerSizes.length !== layerCount) {
             throw new Error(`Layer sizes length (${layerSizes.length}) does not match layer count (${layerCount})`);
         }
@@ -219,7 +219,7 @@ export class NeuralNetwork {
             if (CookieHandler.cookie?.inputLayerOptions) {
                 const cookieInputLayerOptions = CookieHandler.cookie.inputLayerOptions as SerialisedInputLayerOptions;
                 Object.keys(this.options).forEach((key) => {
-                    const typedKey = key as keyof typeof NeuralNetwork.options;
+                    const typedKey = key as keyof typeof this.options;
                     if (cookieInputLayerOptions[typedKey] !== undefined) {
                         this.options[typedKey].value = cookieInputLayerOptions[typedKey];
                         this.options[typedKey].element.checked = cookieInputLayerOptions[typedKey];
@@ -228,7 +228,7 @@ export class NeuralNetwork {
             }
 
             Object.keys(this.options).forEach((key) => {
-                const typedKey = key as keyof typeof NeuralNetwork.options;
+                const typedKey = key as keyof typeof this.options;
                 const inputOption = this.options[typedKey];
                 if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
                 UI.lockableElements.push(inputOption.element);
