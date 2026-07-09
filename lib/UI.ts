@@ -24,7 +24,6 @@ export class UI {
 
     public static init() {
         document.addEventListener("DOMContentLoaded", () => {
-            this.recalculateWhatTextSizes();
             this.bindTips();
             this.bindMiscellaneousUi();
         });
@@ -43,14 +42,6 @@ export class UI {
             if (!lastPointerMove) { return; }
             Stadium.handlePointerMove(lastPointerMove);
         }
-    }
-
-    private static recalculateWhatTextSizes() {
-        Array.from(document.getElementsByClassName("whatText")).forEach(e => {
-            const element = e as HTMLElement;
-            element.style.width = element.parentElement?.clientWidth + "px";
-            element.style.height = element.parentElement?.clientHeight + "px";
-        });
     }
 
     private static bindTips() {
@@ -132,9 +123,6 @@ export class UI {
             Stadium.STADIUM_WIDTH = AppState.isRaceMode ? 985 : 600;
             Stadium.recalculateCanvasSizes();
             Stadium.drawCars();
-            setTimeout(() => {
-                this.recalculateWhatTextSizes();
-            }, 200);
         });
     }
 
