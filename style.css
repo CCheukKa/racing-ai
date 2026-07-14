@@ -723,6 +723,7 @@ input:user-invalid {
                     overflow: hidden;
                     border-radius: 5px;
                     font-weight: normal;
+                    isolation: isolate;
 
                     &::after {
                         background-color: #00aa0080;
