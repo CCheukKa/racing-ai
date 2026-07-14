@@ -3,7 +3,7 @@ import { NeuralNetwork } from "./neuralNetwork";
 import { Car } from "../cars";
 import { Garage } from "./garage";
 import { MathExtra } from "../utils/mathExtra";
-import { drawCircle, drawLine, drawRectangle, getCanvasPoint } from "@lib/utils/canvasUtils";
+import { drawCircle, drawLine, drawRectangle, getCanvasPoint, recacheCanvasPointCache } from "@lib/utils/canvasUtils";
 import { PerformanceMonitor } from "@lib/utils/performanceMonitor";
 
 export class Stadium {
@@ -79,7 +79,8 @@ export class Stadium {
 
     /* ----------------------------------- UI ----------------------------------- */
 
-    public static stadiumContainer = null as unknown as HTMLDivElement;
+    private static stadiumFrame = null as unknown as HTMLDivElement;
+    private static stadiumContainer = null as unknown as HTMLDivElement;
     public static STADIUM_WIDTH: number;
     public static STADIUM_HEIGHT: number;
     public static trackCanvas = null as unknown as HTMLCanvasElement;
@@ -91,7 +92,7 @@ export class Stadium {
 
     private static clearStadiumButton = null as unknown as HTMLButtonElement;
 
-    public static lastPointerMove: PointerEvent | null = null;
+    private static lastPointerMove: PointerEvent | null = null;
 
     public static readonly TRACK_COLOUR = '#e0e0e0';
     private static readonly TRACK_WIDTH = 50;
@@ -221,27 +222,54 @@ export class Stadium {
         return score;
     }
 
+    private static recalculateCanvasSizes() {
+        const { height, width } = this.stadiumFrame.getBoundingClientRect();
+        console.log({ height, width });
+
+        const oldWidth = isNaN(this.STADIUM_WIDTH) ? 0 : this.STADIUM_WIDTH;
+        const oldHeight = isNaN(this.STADIUM_HEIGHT) ? 0 : this.STADIUM_HEIGHT;
+
+        let stadiumEnlarged = oldWidth < width || oldHeight < height;
+        this.STADIUM_WIDTH = Math.max(oldWidth, Math.ceil(width));
+        this.STADIUM_HEIGHT = Math.max(oldHeight, Math.ceil(height));
+
         this.TRACK_START_X = this.STADIUM_WIDTH / 2;
         this.TRACK_START_Y = this.STADIUM_HEIGHT / 4;
         this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
         this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
-        this.trackCanvas.width = this.STADIUM_WIDTH;
-        this.trackCanvas.height = this.STADIUM_HEIGHT;
-        this.carCanvas.width = this.STADIUM_WIDTH;
-        this.carCanvas.height = this.STADIUM_HEIGHT;
-        this.hintCanvas.width = this.STADIUM_WIDTH;
-        this.hintCanvas.height = this.STADIUM_HEIGHT;
+        if (stadiumEnlarged) {
+            const oldTrackData = oldWidth > 0 && oldHeight > 0
+                ? this.trackCtx.getImageData(0, 0, oldWidth, oldHeight).data
+                : null;
+
+            this.trackCanvas.width = this.STADIUM_WIDTH;
+            this.trackCanvas.height = this.STADIUM_HEIGHT;
+            this.carCanvas.width = this.STADIUM_WIDTH;
+            this.carCanvas.height = this.STADIUM_HEIGHT;
+            this.hintCanvas.width = this.STADIUM_WIDTH;
+            this.hintCanvas.height = this.STADIUM_HEIGHT;
+
+            if (oldTrackData) {
+                const dx = Math.floor((this.STADIUM_WIDTH - oldWidth) / 2);
+                const dy = Math.floor((this.STADIUM_HEIGHT - oldHeight) / 2);
+                this.trackCtx.putImageData(new ImageData(oldTrackData, oldWidth, oldHeight), dx, dy);
+            }
+
+            this.updateTrackData();
+        }
 
         this.hintX = NaN;
         this.hintY = NaN;
         this.isHintActive = false;
 
-        this.updateTrackData();
+
+        console.log(`Stadium canvas sizes recalculated: ${this.STADIUM_WIDTH}x${this.STADIUM_HEIGHT}`);
     }
 
     /* ---------------------------------- Code ---------------------------------- */
 
     public static init() {
+        const stadiumFrame = document.getElementById('stadiumFrame') as HTMLDivElement | null;
         const stadiumContainer = document.getElementById('stadiumContainer') as HTMLDivElement | null;
         const trackCanvas = document.getElementById('trackCanvas') as HTMLCanvasElement | null;
         const carCanvas = document.getElementById('carCanvas') as HTMLCanvasElement | null;
@@ -251,10 +279,11 @@ export class Stadium {
         const carCtx = carCanvas?.getContext('2d') ?? null;
         const hintCtx = hintCanvas?.getContext('2d') ?? null;
 
-        if (!stadiumContainer || !trackCanvas || !carCanvas || !hintCanvas || !clearStadiumButton || !trackCtx || !carCtx || !hintCtx) {
+        if (!stadiumFrame || !stadiumContainer || !trackCanvas || !carCanvas || !hintCanvas || !clearStadiumButton || !trackCtx || !carCtx || !hintCtx) {
             throw new Error('Failed to initialise stadium UI elements.');
         }
 
+        this.stadiumFrame = stadiumFrame;
         this.stadiumContainer = stadiumContainer;
         this.trackCanvas = trackCanvas;
         this.trackCtx = trackCtx;
@@ -263,8 +292,7 @@ export class Stadium {
         this.hintCanvas = hintCanvas;
         this.hintCtx = hintCtx;
         this.clearStadiumButton = clearStadiumButton;
-        this.STADIUM_WIDTH = document.body.clientWidth;
-        this.STADIUM_HEIGHT = document.body.clientHeight;
+        this.recalculateCanvasSizes();
 
         document.addEventListener('DOMContentLoaded', () => {
             this.recalculateCanvasSizes();
@@ -357,7 +385,7 @@ export class Stadium {
         });
     }
 
-    public static handlePointerMove(event: PointerEvent) {
+    private static handlePointerMove(event: PointerEvent) {
         const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
         const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
         this.handleMouseMove(x, y, isOnCanvas);
@@ -394,5 +422,12 @@ export class Stadium {
 
             this.updateTrackData();
         }
+    }
+
+    public static handleResize() {
+        this.recalculateCanvasSizes();
+        recacheCanvasPointCache(this.trackCanvas);
+        if (!this.lastPointerMove) { return; }
+        this.handlePointerMove(this.lastPointerMove);
     }
 }

@@ -3,7 +3,6 @@ import { CookieHandler } from "./utils/cookieHandler";
 import { Leaderboard } from "./components/leaderboard";
 import { Stadium } from "./components/stadium";
 import { AppState } from "./appState";
-import { recacheCanvasPointCache } from "./utils/canvasUtils";
 
 export class UI {
     private static _inputsLocked = false;
@@ -37,10 +36,7 @@ export class UI {
         });
 
         function handleResize() {
-            recacheCanvasPointCache(Stadium.trackCanvas);
-            const lastPointerMove = Stadium.lastPointerMove;
-            if (!lastPointerMove) { return; }
-            Stadium.handlePointerMove(lastPointerMove);
+            Stadium.handleResize();
         }
     }
 
@@ -117,13 +113,13 @@ export class UI {
         });
 
         const raceModeButton = document.getElementById("raceModeButton") as HTMLButtonElement | null;
-        raceModeButton?.addEventListener("click", () => {
-            AppState.isRaceMode = !AppState.isRaceMode;
-            document.body.classList.toggle("raceMode", AppState.isRaceMode);
-            Stadium.STADIUM_WIDTH = AppState.isRaceMode ? 985 : 600;
-            Stadium.recalculateCanvasSizes();
-            Stadium.drawCars();
-        });
+        // raceModeButton?.addEventListener("click", () => {
+        //     AppState.isRaceMode = !AppState.isRaceMode;
+        //     document.body.classList.toggle("raceMode", AppState.isRaceMode);
+        //     Stadium.STADIUM_WIDTH = AppState.isRaceMode ? 985 : 600;
+        //     Stadium.recalculateCanvasSizes();
+        //     Stadium.drawCars();
+        // });
     }
 
     private static importCarFiles(files: FileList | File[]) {

@@ -371,7 +371,7 @@ input:user-invalid {
         }
     }
 
-    .stadiumFrame {
+    #stadiumFrame {
         height: 100%;
         flex-grow: 1;
         flex-shrink: 100;
