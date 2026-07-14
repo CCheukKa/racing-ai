@@ -385,7 +385,7 @@ input:user-invalid {
 
     #stadiumFrame {
         height: 100%;
-        min-width: 250px;
+        /* min-width: 250px; */
         flex-grow: 1;
         flex-shrink: 100;
         display: flex;
@@ -569,10 +569,18 @@ input:user-invalid {
                 justify-content: center;
                 gap: 2px;
 
-                label {
-                    cursor: help;
-                    font-weight: normal;
+                .booleanOption {
+                    display: flex;
+                    flex-direction: row;
+                    flex-wrap: nowrap;
+
+                    label {
+                        cursor: help;
+                        font-weight: normal;
+                        white-space: nowrap;
+                    }
                 }
+
             }
 
             .diagramContainer {
@@ -709,6 +717,7 @@ input:user-invalid {
                 label {
                     cursor: help;
                     font-weight: normal;
+                    white-space: nowrap;
                 }
             }
 
@@ -770,6 +779,9 @@ input:user-invalid {
                     div {
                         text-align: center;
                         position: relative;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
                         &:not(:last-child)::after {
                             content: '';
@@ -879,6 +891,9 @@ input:user-invalid {
                     text-align: center;
                     position: relative;
                     cursor: help;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
                     &:not(:last-child)::after {
                         content: '';
