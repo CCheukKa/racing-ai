@@ -1059,7 +1059,6 @@ input:user-invalid {
     text-shadow: 0 0 10px #000000;
     top: -100vh;
     left: -100vw;
-    display: none;
 
     .right {
         display: flex;
