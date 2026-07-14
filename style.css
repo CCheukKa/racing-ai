@@ -563,7 +563,6 @@ input:user-invalid {
                 overflow-y: auto;
                 direction: rtl;
                 flex-grow: 1;
-                min-height: 100px;
                 position: relative;
 
                 scroll-snap-type: proximity;
