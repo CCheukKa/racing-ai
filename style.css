@@ -261,6 +261,7 @@ input:user-invalid {
             position: absolute;
             cursor: none;
             overscroll-behavior: none;
+            touch-action: none;
         }
 
         #hintCanvas {
