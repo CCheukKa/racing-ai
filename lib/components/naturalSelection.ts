@@ -11,7 +11,6 @@ export class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
 
     public static createInitialBatch() {
-        if (Stadium.isRaceMode) { return true; }
         if (Garage.probeAngles === null) { return false; }
         Stadium.cars = Array.from({ length: this.options.populationSize.value }, () => new Car(undefined, undefined, Garage.probeAngles));
         return true;
@@ -38,28 +37,24 @@ export class NaturalSelection {
 
         // Elimination
         let survivedCars: Car[] = [];
-        if (Stadium.isRaceMode) {
-            survivedCars = Stadium.cars;
-        } else {
-            sortedCars.forEach((car, index) => {
-                car.rank = index + 1;
-                const willSurvive = Math.random() < this.survivalProbability(car.rank);
+        sortedCars.forEach((car, index) => {
+            car.rank = index + 1;
+            const willSurvive = Math.random() < this.survivalProbability(car.rank);
 
-                console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
-                if (willSurvive) { survivedCars.push(car); }
-            });
-            console.log(`***** Best car score: ${sortedCars[0]!.score}, Lap: ${sortedCars[0]!.lapCount}, GrassT: ${sortedCars[0]!.grassTicks}, SpeedAvg: ${sortedCars[0]!.speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0]!.network.getHash()} *****`);
+            console.log(`Rank: ${car.rank}, Score: ${car.score}, Lap: ${car.lapCount}, GrassT: ${car.grassTicks}, SpeedAvg: ${car.speedSum / this.options.tickLimit.value}, Survive?: ${willSurvive}, Hash: ${car.network.getHash()}`);
+            if (willSurvive) { survivedCars.push(car); }
+        });
+        console.log(`***** Best car score: ${sortedCars[0]!.score}, Lap: ${sortedCars[0]!.lapCount}, GrassT: ${sortedCars[0]!.grassTicks}, SpeedAvg: ${sortedCars[0]!.speedSum / this.options.tickLimit.value}, Hash: ${sortedCars[0]!.network.getHash()} *****`);
 
-            console.log(`${(survivedCars.length / Stadium.cars.length * 100).toFixed(2)}% survived`);
+        console.log(`${(survivedCars.length / Stadium.cars.length * 100).toFixed(2)}% survived`);
 
-            this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
-                generation: Looper.generationCount,
-                populationSize: this.options.populationSize.value,
-                survivors: survivedCars.length,
-                bestScore: sortedCars[0]!.score
-            };
-            this.updateLog();
-        }
+        this.naturalSelectionLog[this.naturalSelectionLog.length - 1] = {
+            generation: Looper.generationCount,
+            populationSize: this.options.populationSize.value,
+            survivors: survivedCars.length,
+            bestScore: sortedCars[0]!.score
+        };
+        this.updateLog();
 
         Leaderboard.update();
 

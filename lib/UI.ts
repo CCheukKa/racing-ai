@@ -111,15 +111,6 @@ export class UI {
             this.importCarFiles(files);
             dragPrompt?.classList.add("hidden");
         });
-
-        const raceModeButton = document.getElementById("raceModeButton") as HTMLButtonElement | null;
-        // raceModeButton?.addEventListener("click", () => {
-        //     AppState.isRaceMode = !AppState.isRaceMode;
-        //     document.body.classList.toggle("raceMode", AppState.isRaceMode);
-        //     Stadium.STADIUM_WIDTH = AppState.isRaceMode ? 985 : 600;
-        //     Stadium.recalculateCanvasSizes();
-        //     Stadium.drawCars();
-        // });
     }
 
     private static importCarFiles(files: FileList | File[]) {

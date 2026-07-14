@@ -13,7 +13,6 @@ export class Stadium {
     public static readonly CAR_WIDTH = 20;
     public static readonly CAR_HEIGHT = 10;
     public static cars: Car[] = [];
-    public static isRaceMode = false;
 
     // Tracks the active requestAnimationFrame ID to allow cancellation/resets
     private static animationFrameId: number | null = null;
@@ -37,13 +36,7 @@ export class Stadium {
     private static loop() {
         PerformanceMonitor.checkPerformance();
 
-        // Only progress cars and logic if running simulation/race mode
-        if (this.isRaceMode) {
-            this.tickDo();
-        } else {
-            // Even if the race hasn't started, keep drawing cars when spawning/static
-            this.drawCars();
-        }
+        this.drawCars();
 
         // Handle the deferred UI/Crosshair render tick
         if (this.isHintActive) {

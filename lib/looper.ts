@@ -74,8 +74,6 @@ export class Looper {
             console.log(`---------- Starting Generation ${this.generationCount} with ${Stadium.cars.length} cars ----------`);
             NaturalSelection.generationStart();
 
-            if (Stadium.isRaceMode) { this.generationLoopButton.click(); }
-
             const startTime = performance.now();
 
             let tickLooper = this.tickLoop();
@@ -109,7 +107,7 @@ export class Looper {
                 this.generationLoopButton.disabled = false;
                 console.log(`Resuming generation loop at generation ${this.generationCount}`);
             }
-            if (!Stadium.isRaceMode) { NaturalSelection.generationPostEnd(survivedCars); }
+            NaturalSelection.generationPostEnd(survivedCars);
         }
     }
 
