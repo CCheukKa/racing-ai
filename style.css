@@ -199,13 +199,10 @@ input:user-invalid {
 
     .tickSpeedControls {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         justify-content: flex-end;
-        flex-grow: 1;
-        width: 100%;
-
-        display: none;
+        gap: 10px;
 
         &>div {
             width: 100%;
@@ -214,24 +211,34 @@ input:user-invalid {
             align-items: center;
             justify-content: space-between;
             gap: 5px;
-        }
 
-        input {
-            width: 50px;
-            text-align: right;
-            background-color: #ffffff20;
-            border: none;
-            color: #ffffff;
-            border-radius: 2px;
-            font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
-            font-weight: bold;
+            span {
+                white-space: nowrap;
+                text-align: right;
+            }
 
-            &::-webkit-inner-spin-button,
-            &::-webkit-outer-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
+            #tickSpeed {
+                min-width: 4ch;
+            }
+
+            input {
+                width: 50px;
+                text-align: right;
+                background-color: #ffffff20;
+                border: none;
+                color: #ffffff;
+                border-radius: 2px;
+                font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
+                font-weight: bold;
+
+                &::-webkit-inner-spin-button,
+                &::-webkit-outer-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
             }
         }
+
     }
 }
 

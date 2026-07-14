@@ -18,9 +18,6 @@ export class Looper {
     private static lastFrameTime: number = 0;
     private static timeAccumulator: number = 0;
 
-    private static maxTPS: number = 0;
-    private static tickDurations: number[] = [];
-
     public static runLoop(looper: Generator) {
         function step(currentTime: number) {
             if (Looper.tickLoopPaused) {
@@ -44,14 +41,7 @@ export class Looper {
             const maxTicksPerFrame = Math.min(100, Math.ceil(Looper.targetTPS / 30)); // Safety limit
 
             while (Looper.timeAccumulator >= timeStep && ticksThisFrame < maxTicksPerFrame) {
-                const startTime = performance.now();
                 const res = looper.next();
-                const endTime = performance.now();
-
-                Looper.tickDurations.push(endTime - startTime);
-                if (Looper.tickDurations.length > 500) {
-                    Looper.tickDurations.shift();
-                }
 
                 if (res.done) { return; }
                 Looper.timeAccumulator -= timeStep;
@@ -66,10 +56,6 @@ export class Looper {
                 Looper.updateTickSpeedDisplay();
                 Looper.ticksInLastSecond = 0;
                 Looper.lastTPSUpdateTime = currentTime;
-
-                const averageTickDuration = Looper.tickDurations.reduce((a, b) => a + b, 0) / Looper.tickDurations.length;
-                Looper.maxTPS = Math.round(1000 / averageTickDuration);
-                Looper.updateMaxTickSpeedDisplay();
             }
 
             requestAnimationFrame(step);
@@ -140,7 +126,6 @@ export class Looper {
 
     /* ----------------------------------- UI ----------------------------------- */
 
-    private static maxTickSpeedDisplay = document.getElementById('maxTickSpeed') as HTMLSpanElement;
     private static tickSpeedDisplay = document.getElementById('tickSpeed') as HTMLSpanElement;
     private static targetTickSpeedInput = document.getElementById('targetTickSpeedInput') as HTMLInputElement;
 
@@ -149,9 +134,6 @@ export class Looper {
 
     private static updateTickSpeedDisplay() {
         this.tickSpeedDisplay.textContent = this.actualTPS.toString();
-    }
-    private static updateMaxTickSpeedDisplay() {
-        this.maxTickSpeedDisplay.textContent = this.maxTPS.toString();
     }
 
     /* ---------------------------------- Code ---------------------------------- */
