@@ -31,7 +31,7 @@ export class Cars {
         car.lapCount = carData.lapCount;
         car.score = carData.score;
         car.network = network;
-        car.inputLayerOptions = carData.inputLayerOptions;
+        car.inputLayerOptions = { ...(carData.inputLayerOptions ?? NeuralNetwork.serialiseInputLayerOptions()) };
         car.generation = carData.generation;
         car.colour = carData.colour;
         return car;
@@ -146,6 +146,7 @@ export class Car {
     clone(): Car {
         const newCar = new Car(this.x, this.y, this.probes.map(probe => probe.angle));
         newCar.network = this.network.clone();
+        newCar.inputLayerOptions = { ...this.inputLayerOptions };
         newCar.generation = this.generation;
         return newCar;
     }

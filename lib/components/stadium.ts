@@ -37,13 +37,8 @@ export class Stadium {
     private static loop() {
         PerformanceMonitor.checkPerformance();
 
-        // Only progress cars and logic if running simulation/race mode
-        if (Stadium.isRaceMode) {
-            Stadium.tickDo();
-        } else {
-            // Even if the race hasn't started, keep drawing cars when spawning/static
-            Stadium.drawCars();
-        }
+        // Simulation progression is Looper-driven; this loop only repaints UI state.
+        Stadium.drawCars();
 
         // Handle the deferred UI/Crosshair render tick
         if (Stadium.isHintActive) {

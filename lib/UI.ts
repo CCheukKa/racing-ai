@@ -2,7 +2,6 @@ import { type SerialisedCarData, Cars } from "./cars";
 import { CookieHandler } from "./utils/cookieHandler";
 import { Leaderboard } from "./components/leaderboard";
 import { Stadium } from "./components/stadium";
-import { AppState } from "./appState";
 import { recacheCanvasPointCache } from "./utils/canvasUtils";
 
 export class UI {
@@ -128,11 +127,18 @@ export class UI {
             dragPrompt?.classList.add("hidden");
         });
 
-        const raceModeButton = document.getElementById("raceModeButton") as HTMLButtonElement | null;
-        raceModeButton?.addEventListener("click", () => {
-            AppState.isRaceMode = !AppState.isRaceMode;
-            document.body.classList.toggle("raceMode", AppState.isRaceMode);
-            Stadium.STADIUM_WIDTH = AppState.isRaceMode ? 985 : 600;
+        const raceModeButton = document.getElementById("raceModeButton") as HTMLInputElement | null;
+        raceModeButton?.addEventListener("change", () => {
+            const isRaceMode = !!raceModeButton.checked;
+
+            // Race mode is intended for imported-only runs.
+            if (isRaceMode) {
+                Stadium.cars = [];
+            }
+
+            Stadium.isRaceMode = isRaceMode;
+            document.body.classList.toggle("raceMode", isRaceMode);
+            Stadium.STADIUM_WIDTH = isRaceMode ? 985 : 600;
             Stadium.recalculateCanvasSizes();
             Stadium.drawCars();
             setTimeout(() => {
@@ -175,7 +181,7 @@ export class UI {
                     if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash + (carData.name ? ` (${carData.name})` : "")}`)) { return; }
                 }
                 const car = Cars.deserialiseCarData(carData, true);
-                AppState.cars.push(car);
+                Stadium.cars.push(car);
                 Leaderboard.leaderboard.push(carData);
                 Leaderboard.update();
                 Stadium.drawCars();
