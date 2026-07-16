@@ -38,6 +38,9 @@ jobs:
               shell: bash
             - name: Build with Bun
               run: bun run build
+            - name: Add build watermark
+              run: |
+                  sed -i "s/#!build/${GITHUB_SHA:0:7}/g" dist/index.html
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v5
               with:

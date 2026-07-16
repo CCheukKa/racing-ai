@@ -164,6 +164,16 @@ input:user-invalid {
     translate: calc(var(--padding) * -1) calc(var(--padding) * -1);
 }
 
+.buildWatermark {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    font-size: 12px;
+    color: #ffffff20;
+    font-weight: normal;
+    padding: 5px 10px;
+}
+
 #mainContainer {
     display: grid;
     grid-template-columns: 375px 600px 375px 145px;
