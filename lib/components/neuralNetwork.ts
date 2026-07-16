@@ -7,6 +7,7 @@ import { MathExtra } from "../utils/mathExtra";
 import { NaturalSelection } from "./naturalSelection";
 import { Stadium } from "./stadium";
 import { UI } from "@lib/UI";
+import { TranslationKey } from "@lib/translation";
 
 export class NeuralNetwork {
     /* ---------------------------------- Logic --------------------------------- */
@@ -257,7 +258,7 @@ export class NeuralNetwork {
             const input = this.hiddenLayerInput.value.trim();
             const newHiddenLayerSizes = input.split(' ').map(size => parseInt(size.trim(), 10)).filter(size => !isNaN(size) && size > 0);
             if (newHiddenLayerSizes.some(size => size > 50)) {
-                alert('Hidden layer sizes must be between 1 and 50.');
+                alert(UI.t(TranslationKey.HiddenLayerSizeLimitAlert));
                 return;
             }
             this.hiddenLayerSizes = newHiddenLayerSizes;

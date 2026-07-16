@@ -5,9 +5,10 @@ import { Garage } from "./garage";
 import { MathExtra } from "../utils/mathExtra";
 import { drawCircle, drawLine, drawRectangle, getCanvasPoint, recacheCanvasPointCache } from "@lib/utils/canvasUtils";
 import { PerformanceMonitor } from "@lib/utils/performanceMonitor";
+import { UI } from "@lib/UI";
+import { TranslationKey } from "@lib/translation";
 
 export class Stadium {
-
     /* ---------------------------------- Logic --------------------------------- */
 
     public static readonly CAR_WIDTH = 20;
@@ -353,7 +354,7 @@ export class Stadium {
         });
 
         this.clearStadiumButton.addEventListener('click', () => {
-            if (!confirm('Are you sure you want to clear the stadium? This will remove all track data.')) { return; }
+            if (!confirm(UI.t(TranslationKey.ClearStadiumConfirm))) { return; }
             this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
             this.updateTrackData();
         });

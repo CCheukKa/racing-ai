@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 import type { SerialisedInputLayerOptions } from '../components/neuralNetwork';
 import type { SerialisedNaturalSelectionOptions } from '../components/naturalSelection';
+import type { SupportedLanguage } from '../translation';
 
 type Cookie = {
     probeAngles?: number[];
@@ -8,6 +9,7 @@ type Cookie = {
     hiddenLayerSizes?: number[];
     naturalSelectionOptions?: SerialisedNaturalSelectionOptions;
     targetTPS?: number;
+    uiLanguage?: SupportedLanguage;
 };
 
 const COOKIE_ROOT_NAME = 'cck-wtf-racing-ai';

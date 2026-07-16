@@ -2,14 +2,38 @@ import { type SerialisedCarData, Cars } from "./cars";
 import { CookieHandler } from "./utils/cookieHandler";
 import { Leaderboard } from "./components/leaderboard";
 import { Stadium } from "./components/stadium";
+import { TranslationKey, SUPPORTED_LANGUAGES, TRANSLATIONS, getTranslationValue, type SupportedLanguage } from "./translation";
 
 export class UI {
     private static _inputsLocked = false;
     static readonly lockableElements: (HTMLButtonElement | HTMLTextAreaElement | HTMLInputElement)[] = [];
     static zoomFactor = 1;
+    private static currentLanguage: SupportedLanguage = "en-GB";
+    private static languageButton = document.getElementById("languageButton") as HTMLButtonElement | null;
+    private static refreshTips: (() => void) | null = null;
 
     public static get inputsLocked() {
         return this._inputsLocked;
+    }
+
+    public static t(key: TranslationKey): string {
+        if (key === TranslationKey.TickCounterPrefix) {
+            return this.currentLanguage === "zh-HK" ? "刻" : "Tick";
+        }
+
+        const value = getTranslationValue(TRANSLATIONS[this.currentLanguage], key);
+        if (typeof value !== "string") {
+            throw new Error(`Translation key ${key} is not a string value.`);
+        }
+        return value;
+    }
+
+    public static tf(key: TranslationKey, ...args: any[]): string {
+        const value = getTranslationValue(TRANSLATIONS[this.currentLanguage], key);
+        if (typeof value !== "function") {
+            throw new Error(`Translation key ${key} is not a formatted string value.`);
+        }
+        return value(...args);
     }
 
     public static set inputsLocked(value: boolean) {
@@ -20,8 +44,14 @@ export class UI {
         });
     }
 
+    public static getTickCounterPrefix(): string {
+        return this.t(TranslationKey.TickCounterPrefix);
+    }
+
     public static init() {
         document.addEventListener("DOMContentLoaded", () => {
+            this.loadLanguageFromCookie();
+            this.applyLanguage();
             this.recalculateWhatTextSizes();
             this.onLayoutChange();
             this.bindTips();
@@ -55,14 +85,17 @@ export class UI {
     }
 
     private static bindTips() {
-        const tips = document.getElementsByClassName("tip");
-        if (tips.length === 0) { return; }
+        const tipsContainer = document.querySelector(".tips") as HTMLDivElement | null;
+        if (!tipsContainer) { return; }
 
         let currentTipIndex = -1;
-        showRandomTip();
-        setInterval(showRandomTip, 10000);
+        const showRandomTip = () => {
+            const bundle = TRANSLATIONS[this.currentLanguage];
+            tipsContainer.innerHTML = bundle.tips.map((tip) => `<div class="tip"><b>${bundle.tipsLabel}</b> <u>${tip}</u></div>`).join("");
 
-        function showRandomTip() {
+            const tips = Array.from(tipsContainer.getElementsByClassName("tip"));
+            if (tips.length === 0) { return; }
+
             let randomIndex = 0;
             do {
                 randomIndex = Math.floor(Math.random() * tips.length);
@@ -71,13 +104,21 @@ export class UI {
             const tipElement = tips[randomIndex] as HTMLElement;
             tipElement.scrollIntoView({ behavior: "instant", block: "center" });
             currentTipIndex = randomIndex;
-        }
+        };
+
+        showRandomTip();
+        setInterval(showRandomTip, 10000);
+        this.refreshTips = showRandomTip;
     }
 
     private static bindMiscellaneousUi() {
+        this.languageButton?.addEventListener("click", () => {
+            this.cycleLanguage();
+        });
+
         const resetSettingsButton = document.getElementById("resetSettingsButton") as HTMLButtonElement | null;
         resetSettingsButton?.addEventListener("click", () => {
-            if (!confirm("Are you sure you want to reset all settings? This will also refresh the page.")) { return; }
+            if (!confirm(this.t(TranslationKey.ResetSettingsConfirm))) { return; }
             CookieHandler.cookie = null;
             CookieHandler.updateCookie();
             location.reload();
@@ -151,7 +192,7 @@ export class UI {
             file.type === "application/json" || file.name.endsWith(".json"),
         );
         if (jsonFiles.length === 0) {
-            alert("Failed to import car(s). Please ensure the file(s) are valid JSON car data files.");
+            alert(this.t(TranslationKey.ImportInvalidFiles));
             return;
         }
 
@@ -173,11 +214,11 @@ export class UI {
         Promise.all(readers).then(results => {
             if (results.length > 1) {
                 const hashes = results.map(({ hash, carData }) => hash + (carData.name ? ` (${carData.name})` : "")).join("\n");
-                if (!confirm(`Are you sure you want to import all ${results.length} cars?\n\nHashes:\n${hashes}`)) { return; }
+                if (!confirm(this.tf(TranslationKey.ImportManyConfirm, results.length, hashes))) { return; }
             }
             results.forEach(({ hash, carData }) => {
                 if (results.length === 1) {
-                    if (!confirm(`Are you sure you want to import this car?\n\nHash:\n${hash + (carData.name ? ` (${carData.name})` : "")}`)) { return; }
+                    if (!confirm(this.tf(TranslationKey.ImportOneConfirm, hash + (carData.name ? ` (${carData.name})` : "")))) { return; }
                 }
                 const car = Cars.deserialiseCarData(carData, true);
                 Stadium.cars.push(car);
@@ -187,8 +228,73 @@ export class UI {
                 console.log("Car imported:", car);
             });
         }).catch(error => {
-            alert("Failed to import car(s). Please ensure the file(s) are valid JSON car data files.");
+            alert(this.t(TranslationKey.ImportInvalidFiles));
             console.error("Failed to import car(s):", error);
         });
+    }
+
+    private static loadLanguageFromCookie() {
+        const cookieLanguage = CookieHandler.cookie?.uiLanguage;
+        if (cookieLanguage === "en-GB" || cookieLanguage === "zh-HK") {
+            this.currentLanguage = cookieLanguage;
+        }
+    }
+
+    private static cycleLanguage() {
+        const currentIndex = SUPPORTED_LANGUAGES.findIndex(lang => lang.code === this.currentLanguage);
+        const nextIndex = (currentIndex + 1) % SUPPORTED_LANGUAGES.length;
+        this.currentLanguage = SUPPORTED_LANGUAGES[nextIndex]!.code;
+
+        if (CookieHandler.cookie === null) { CookieHandler.cookie = {}; }
+        CookieHandler.cookie.uiLanguage = this.currentLanguage;
+        CookieHandler.updateCookie();
+
+        this.applyLanguage();
+    }
+
+    private static applyLanguage() {
+        const bundle = TRANSLATIONS[this.currentLanguage];
+
+        Object.entries(bundle.cssVariables).forEach(([name, value]) => {
+            const needsQuotedContent = name.startsWith("--translation-");
+            document.documentElement.style.setProperty(name, needsQuotedContent ? JSON.stringify(value) : value);
+        });
+
+        document.querySelectorAll<HTMLElement>("[data-translation]").forEach((element) => {
+            const key = element.dataset.translation as TranslationKey | undefined;
+            if (!key) { return; }
+            element.textContent = this.t(key);
+        });
+
+        document.querySelectorAll<HTMLElement>("[data-translation-html]").forEach((element) => {
+            const key = element.dataset.translationHtml as TranslationKey | undefined;
+            if (!key) { return; }
+            element.innerHTML = this.t(key);
+        });
+
+        document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-translation-placeholder]").forEach((element) => {
+            const key = element.dataset.translationPlaceholder as TranslationKey | undefined;
+            if (!key) { return; }
+            element.placeholder = this.t(key);
+        });
+
+        this.languageButton = document.getElementById("languageButton") as HTMLButtonElement | null;
+        if (this.languageButton) {
+            this.languageButton.textContent = this.t(TranslationKey.LanguageButtonLabel);
+            this.languageButton.title = this.t(TranslationKey.LanguageButtonTitle);
+        }
+
+        this.refreshTips?.();
+        this.updateTickCounterLanguage();
+        window.dispatchEvent(new CustomEvent("ui-language-changed", { detail: { language: this.currentLanguage } }));
+    }
+
+    private static updateTickCounterLanguage() {
+        const tickCounter = document.getElementById("tickCounter") as HTMLDivElement | null;
+        if (!tickCounter) { return; }
+        const prefix = this.getTickCounterPrefix();
+        const existing = tickCounter.textContent ?? "";
+        const valuePart = existing.includes(":") ? existing.split(":").slice(1).join(":") : "";
+        tickCounter.textContent = valuePart ? `${prefix}:${valuePart}` : `${prefix}: 0/0`;
     }
 }

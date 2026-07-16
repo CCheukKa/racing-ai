@@ -2,9 +2,9 @@ import type { SerialisedCarData } from "../cars";
 import { NeuralNetwork, type SerialisedInputLayerOptions } from "./neuralNetwork";
 import { Garage } from "./garage";
 import { UI } from "@lib/UI";
+import { TranslationKey } from "@lib/translation";
 
 export class Leaderboard {
-
     /* ---------------------------------- Logic --------------------------------- */
 
     private static leaderboardElement = document.getElementById('leaderboard') as HTMLDivElement;
@@ -99,14 +99,14 @@ export class Leaderboard {
 
         const content: string[] = [
             // @ts-ignore
-            carData.name ? `Name: ${carData.name}` : null,
-            `Hash: ${carData.hash.slice(0, 8)}...`,
-            `Score: ${carData.score.toFixed(2)}`,
-            `Lap: ${carData.lapCount.toFixed(2)}`,
-            `Avg Speed: ${carData.averageSpeed.toFixed(4)}`,
-            `On Track: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
-            `Generation: ${carData.generation}`,
-            `Inputs: [
+            carData.name ? `${UI.t(TranslationKey.LeaderboardName)}: ${carData.name}` : null,
+            `${UI.t(TranslationKey.LeaderboardHash)}: ${carData.hash.slice(0, 8)}...`,
+            `${UI.t(TranslationKey.LeaderboardScore)}: ${carData.score.toFixed(2)}`,
+            `${UI.t(TranslationKey.LeaderboardLap)}: ${carData.lapCount.toFixed(2)}`,
+            `${UI.t(TranslationKey.LeaderboardAvgSpeed)}: ${carData.averageSpeed.toFixed(4)}`,
+            `${UI.t(TranslationKey.LeaderboardOnTrack)}: ${(carData.onTrackPercentage * 100).toFixed(2)}%`,
+            `${UI.t(TranslationKey.LeaderboardGeneration)}: ${carData.generation}`,
+            `${UI.t(TranslationKey.LeaderboardInputs)}: [
             <br>
                 &nbsp;&nbsp;&nbsp;&nbsp;${carInputs.join(',<br>&nbsp;&nbsp;&nbsp;&nbsp;')}
             <br>
@@ -121,7 +121,7 @@ export class Leaderboard {
             this.carPeekerNeuralNetworkCanvas,
             this.carPeekerNeuralNetworkCtx
         );
-        this.carPeekerNeuralNetworkLayers.innerHTML = `Layers: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`;
+        this.carPeekerNeuralNetworkLayers.innerHTML = `${UI.t(TranslationKey.LeaderboardLayers)}: ${[carData.network.inputNodes, ...carData.network.layers.map(layer => layer.nodes.length)].join(', ')}`;
 
         Garage.redrawCarProbes(
             1,
@@ -130,7 +130,7 @@ export class Leaderboard {
             this.carPeekerProbeAnglesCanvas,
             this.carPeekerProbeAnglesCtx
         );
-        this.carPeekerProbeAnglesList.innerHTML = `Angles: ${carData.probeAngles.map(angle => `${Math.round(angle * 180 / Math.PI * 100000) / 100000}°`).join(', ')}`;
+        this.carPeekerProbeAnglesList.innerHTML = `${UI.t(TranslationKey.LeaderboardAngles)}: ${carData.probeAngles.map(angle => `${Math.round(angle * 180 / Math.PI * 100000) / 100000}°`).join(', ')}`;
     }
 
     private static getSelectedLeaderboardEntryIndex(event: MouseEvent | null): { index: number | null, entry: HTMLElement | null } {
@@ -187,7 +187,7 @@ export class Leaderboard {
         });
 
         this.resetLeaderboardButton.addEventListener('click', () => {
-            if (!confirm('Are you sure you want to reset the leaderboard?')) { return; }
+            if (!confirm(UI.t(TranslationKey.ResetLeaderboardConfirm))) { return; }
             this.leaderboard = [];
             this.update();
             console.log('Leaderboard reset');
@@ -195,10 +195,10 @@ export class Leaderboard {
 
         this.exportSelectedCarButton.addEventListener('click', () => {
             if (!this.selectedCarData) {
-                alert('Please select a car from the leaderboard first.');
+                alert(UI.t(TranslationKey.SelectLeaderboardCarFirst));
                 return;
             }
-            const name = this.selectedCarData.name || prompt('Enter a name for the car (optional):');
+            const name = this.selectedCarData.name || prompt(UI.t(TranslationKey.LeaderboardCarNamePrompt));
             if (name !== null) { this.selectedCarData.name = name; }
             const blob = new Blob([JSON.stringify(this.selectedCarData, null, 4)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);

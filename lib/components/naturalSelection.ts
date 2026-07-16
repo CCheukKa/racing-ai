@@ -6,6 +6,7 @@ import { Leaderboard } from "./leaderboard";
 import { mutateColour } from "../utils/canvasUtils";
 import { CookieHandler } from "../utils/cookieHandler";
 import { MathExtra } from "../utils/mathExtra";
+import { UI } from "../UI";
 
 export class NaturalSelection {
     /* ---------------------------------- Logic --------------------------------- */
@@ -131,7 +132,7 @@ export class NaturalSelection {
     }
 
     public static updateTickCounter() {
-        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${this.options.tickLimit.value}`;
+        this.tickCounter.textContent = `${UI.getTickCounterPrefix()}: ${Looper.tickCount}/${this.options.tickLimit.value}`;
         this.tickCounter.style.setProperty('--progress', `${MathExtra.clamp(Looper.tickCount / this.options.tickLimit.value, 0, 1) * 100}%`);
     }
 

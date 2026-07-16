@@ -2,8 +2,22 @@ import { CookieHandler } from "./utils/cookieHandler";
 import { NaturalSelection } from "./components/naturalSelection";
 import { Stadium } from "./components/stadium";
 import { UI } from "./UI";
+import { TranslationKey } from "./translation";
 
 export class Looper {
+    private static updateControlLabels() {
+        this.generationLoopButton.textContent = UI.t(TranslationKey.StopAfterThis);
+
+        if (this.generationLooper === null) {
+            this.tickLoopButton.textContent = UI.t(TranslationKey.Start);
+            return;
+        }
+
+        this.tickLoopButton.textContent = this.tickLoopPaused
+            ? UI.t(TranslationKey.TickLoopResume)
+            : UI.t(TranslationKey.TickLoopPause);
+    }
+
     /* ---------------------------------- Logic --------------------------------- */
 
     private static ticksInLastSecond: number = 0;
@@ -114,7 +128,7 @@ export class Looper {
             if (this.generationLoopStopped) {
                 console.log(`Generation loop stopped at generation ${this.generationCount}`);
                 this.tickLoopPaused = true;
-                this.tickLoopButton.textContent = 'Resume';
+                this.updateControlLabels();
                 // Wait until resumed
                 while (this.tickLoopPaused) {
                     yield;
@@ -175,11 +189,12 @@ export class Looper {
             }
 
             this.tickLoopPaused = !this.tickLoopPaused;
-            this.tickLoopButton.textContent = this.tickLoopPaused ? 'Resume' : 'Pause';
+            this.updateControlLabels();
 
             if (firstRun) {
                 this.generationLooper = this.generationLoop();
                 this.runLoop(this.generationLooper);
+                this.updateControlLabels();
             }
         });
 
@@ -198,5 +213,11 @@ export class Looper {
             CookieHandler.updateCookie();
         }
         this.targetTickSpeedInput.addEventListener('change', onTargetTickSpeedInputChange);
+
+        window.addEventListener('ui-language-changed', () => {
+            this.updateControlLabels();
+        });
+
+        this.updateControlLabels();
     }
 }
