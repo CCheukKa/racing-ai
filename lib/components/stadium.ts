@@ -271,6 +271,8 @@ export class Stadium {
             if (!this.lastPointerMove) { return; }
             this.handlePointerMove(this.lastPointerMove);
         });
+
+        recacheCanvasPointCache(this.trackCanvas);
     }
 
     /* ---------------------------------- Code ---------------------------------- */
