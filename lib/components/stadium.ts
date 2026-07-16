@@ -357,6 +357,10 @@ export class Stadium {
             this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
             this.updateTrackData();
         });
+
+        this.stadiumContainer.addEventListener('pointerenter', () => {
+            recacheCanvasPointCache(this.trackCanvas);
+        });
     }
 
     private static handleLeftClick(x: number, y: number, target: EventTarget | null) {
