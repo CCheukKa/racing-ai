@@ -76,8 +76,8 @@ export class Looper {
         }
 
         // Initialize and start the loop
-        Looper.lastFrameTime = performance.now();
-        Looper.lastTPSUpdateTime = performance.now();
+        this.lastFrameTime = performance.now();
+        this.lastTPSUpdateTime = performance.now();
         requestAnimationFrame(step);
     }
 
@@ -188,16 +188,15 @@ export class Looper {
             this.generationLoopButton.disabled = true;
         });
 
-        this.targetTickSpeedInput.addEventListener('change', onTargetTickSpeedInputChange);
-
-        function onTargetTickSpeedInputChange() {
-            if (!Looper.targetTickSpeedInput.validity.valid) { return; }
-            const newTargetTPS = parseFloat(Looper.targetTickSpeedInput.value);
-            Looper.targetTPS = newTargetTPS;
+        const onTargetTickSpeedInputChange = () => {
+            if (!this.targetTickSpeedInput.validity.valid) { return; }
+            const newTargetTPS = parseFloat(this.targetTickSpeedInput.value);
+            this.targetTPS = newTargetTPS;
 
             if (CookieHandler.cookie === null) { CookieHandler.cookie = {}; }
             CookieHandler.cookie.targetTPS = newTargetTPS;
             CookieHandler.updateCookie();
         }
+        this.targetTickSpeedInput.addEventListener('change', onTargetTickSpeedInputChange);
     }
 }

@@ -38,16 +38,16 @@ export class Stadium {
         PerformanceMonitor.checkPerformance();
 
         // Simulation progression is Looper-driven; this loop only repaints UI state.
-        Stadium.drawCars();
+        this.drawCars();
 
         // Handle the deferred UI/Crosshair render tick
-        if (Stadium.isHintActive) {
-            Stadium.redrawHintCanvas(Stadium.hintX, Stadium.hintY, Stadium.altStyle);
+        if (this.isHintActive) {
+            this.redrawHintCanvas(this.hintX, this.hintY, this.altStyle);
         } else {
-            Stadium.redrawHintCanvas(NaN, NaN);
+            this.redrawHintCanvas(NaN, NaN);
         }
 
-        Stadium.animationFrameId = requestAnimationFrame(() => Stadium.loop());
+        this.animationFrameId = requestAnimationFrame(() => this.loop());
     }
 
     private static processCars() {
@@ -59,7 +59,7 @@ export class Stadium {
     }
 
     private static spawnCar(x: number, y: number) {
-        if (x < 0 || x >= Stadium.STADIUM_WIDTH || y < 0 || y >= Stadium.STADIUM_HEIGHT) {
+        if (x < 0 || x >= this.STADIUM_WIDTH || y < 0 || y >= this.STADIUM_HEIGHT) {
             console.warn('Spawn coordinates out of bounds');
             return;
         }
@@ -69,7 +69,7 @@ export class Stadium {
     }
 
     private static updateTrackData() {
-        Stadium.trackData = Stadium.trackCtx.getImageData(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT).data;
+        this.trackData = this.trackCtx.getImageData(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT).data;
     }
 
     /* ----------------------------------- UI ----------------------------------- */
@@ -105,10 +105,10 @@ export class Stadium {
     private static previousY: number | undefined;
 
     private static redrawHintCanvas(x: number, y: number, isDelete?: boolean) {
-        Stadium.hintCtx.clearRect(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT);
-        drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
-        drawCircle(Stadium.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
-        drawCircle(Stadium.hintCtx, Stadium.STADIUM_WIDTH / 2, Stadium.STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
+        this.hintCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
+        drawCircle(this.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#ff0000'); // Track start
+        drawCircle(this.hintCtx, this.TRACK_START_X, this.TRACK_START_Y, 5, '#000000', true); // Track start
+        drawCircle(this.hintCtx, this.STADIUM_WIDTH / 2, this.STADIUM_HEIGHT / 2, 5, '#000000', true); // Track center
 
         if (isNaN(x) || isNaN(y)) { return; }
 
@@ -116,16 +116,16 @@ export class Stadium {
             const CURSOR_COLOUR = '#ffffff';
             const CURSOR_CROSSHAIR_LENGTH = 6;
             const CURSOR_CROSSHAIR_WIDTH = 1;
-            drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, CURSOR_COLOUR, true); // Cursor
-            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH, y, x + CURSOR_CROSSHAIR_LENGTH, y, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor crosshair
-            drawLine(Stadium.hintCtx, x, y - CURSOR_CROSSHAIR_LENGTH, x, y + CURSOR_CROSSHAIR_LENGTH, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor crosshair
+            drawCircle(this.hintCtx, x, y, this.TRACK_WIDTH / 2, CURSOR_COLOUR, true); // Cursor
+            drawLine(this.hintCtx, x - CURSOR_CROSSHAIR_LENGTH, y, x + CURSOR_CROSSHAIR_LENGTH, y, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor crosshair
+            drawLine(this.hintCtx, x, y - CURSOR_CROSSHAIR_LENGTH, x, y + CURSOR_CROSSHAIR_LENGTH, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor crosshair
         } else {
             const CURSOR_COLOUR = '#ff4444';
             const CURSOR_CROSSHAIR_LENGTH = 8;
             const CURSOR_CROSSHAIR_WIDTH = 3;
-            drawCircle(Stadium.hintCtx, x, y, this.TRACK_WIDTH / 2, CURSOR_COLOUR, true, 4); // Cursor
-            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor alt crosshair
-            drawLine(Stadium.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor alt crosshair
+            drawCircle(this.hintCtx, x, y, this.TRACK_WIDTH / 2, CURSOR_COLOUR, true, 4); // Cursor
+            drawLine(this.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor alt crosshair
+            drawLine(this.hintCtx, x - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, x + CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, y - CURSOR_CROSSHAIR_LENGTH * Math.SQRT1_2, CURSOR_CROSSHAIR_WIDTH, CURSOR_COLOUR); // Cursor alt crosshair
         }
     }
 
@@ -150,8 +150,8 @@ export class Stadium {
                 this.carCtx.stroke();
             });
 
-            drawRectangle(this.carCtx, -Stadium.CAR_WIDTH / 2, -Stadium.CAR_HEIGHT / 2, Stadium.CAR_WIDTH, Stadium.CAR_HEIGHT, car.colour);
-            drawRectangle(this.carCtx, -Stadium.CAR_WIDTH / 2, -5, Stadium.CAR_WIDTH, Stadium.CAR_HEIGHT, '#000000', true);
+            drawRectangle(this.carCtx, -this.CAR_WIDTH / 2, -this.CAR_HEIGHT / 2, this.CAR_WIDTH, this.CAR_HEIGHT, car.colour);
+            drawRectangle(this.carCtx, -this.CAR_WIDTH / 2, -5, this.CAR_WIDTH, this.CAR_HEIGHT, '#000000', true);
             this.carCtx.resetTransform();
         });
 
@@ -251,12 +251,12 @@ export class Stadium {
                 this.trackCtx.putImageData(new ImageData(oldTrackData, oldWidth, oldHeight), dx, dy);
             }
 
-            Stadium.updateTrackData();
+            this.updateTrackData();
         }
 
-        Stadium.hintX = NaN;
-        Stadium.hintY = NaN;
-        Stadium.isHintActive = false;
+        this.hintX = NaN;
+        this.hintY = NaN;
+        this.isHintActive = false;
     }
 
     public static handleResize() {
@@ -303,13 +303,13 @@ export class Stadium {
         document.addEventListener('DOMContentLoaded', () => {
             this.recalculateCanvasSizes();
             // Kick off the loop animation cycle once canvases are ready
-            if (!Stadium.animationFrameId) {
-                Stadium.loop();
+            if (!this.animationFrameId) {
+                this.loop();
             }
         });
 
         window.addEventListener('blur', () => {
-            Stadium.isHintActive = false;
+            this.isHintActive = false;
         });
 
         document.addEventListener('contextmenu', (event: MouseEvent) => {
@@ -325,7 +325,7 @@ export class Stadium {
                     this.handleLeftClick(x, y, event.target);
                     break;
                 case 1: // Middle button
-                    Stadium.spawnCar(x, y);
+                    this.spawnCar(x, y);
                     break;
                 case 2: // Right button
                     this.handleRightClick(x, y, event.target);
@@ -344,18 +344,18 @@ export class Stadium {
             this.handleMouseUp();
             if (event.pointerType === 'mouse') {
                 const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
-                Stadium.hintX = x;
-                Stadium.hintY = y;
-                Stadium.isHintActive = true;
+                this.hintX = x;
+                this.hintY = y;
+                this.isHintActive = true;
             } else {
-                Stadium.isHintActive = false;
+                this.isHintActive = false;
             }
         });
 
         this.clearStadiumButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to clear the stadium? This will remove all track data.')) { return; }
             this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
-            Stadium.updateTrackData();
+            this.updateTrackData();
         });
     }
 
@@ -385,34 +385,34 @@ export class Stadium {
 
     private static handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
         // Stage changes for requestAnimationFrame thread instead of immediate execution
-        Stadium.hintX = x;
-        Stadium.hintY = y;
-        Stadium.altStyle = this.isRightMouseDown;
-        Stadium.isHintActive = isOnCanvas || this.isLeftMouseDown || this.isRightMouseDown;
+        this.hintX = x;
+        this.hintY = y;
+        this.altStyle = this.isRightMouseDown;
+        this.isHintActive = isOnCanvas || this.isLeftMouseDown || this.isRightMouseDown;
 
         if (this.isLeftMouseDown) {
-            drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
+            drawCircle(this.trackCtx, x, y, this.TRACK_WIDTH / 2, this.TRACK_COLOUR);
             if (this.previousX !== undefined && this.previousY !== undefined) {
-                drawLine(Stadium.trackCtx, this.previousX, this.previousY, x, y, Stadium.TRACK_WIDTH, Stadium.TRACK_COLOUR);
+                drawLine(this.trackCtx, this.previousX, this.previousY, x, y, this.TRACK_WIDTH, this.TRACK_COLOUR);
             }
             this.previousX = x;
             this.previousY = y;
 
-            Stadium.updateTrackData();
+            this.updateTrackData();
         }
         if (this.isRightMouseDown) {
             const ERASE_BUFFER_RADIUS = 4;
 
-            Stadium.trackCtx.globalCompositeOperation = 'destination-out';
-            drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
+            this.trackCtx.globalCompositeOperation = 'destination-out';
+            drawCircle(this.trackCtx, x, y, this.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
             if (this.previousX !== undefined && this.previousY !== undefined) {
-                drawLine(Stadium.trackCtx, this.previousX, this.previousY, x, y, Stadium.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
+                drawLine(this.trackCtx, this.previousX, this.previousY, x, y, this.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
             }
-            Stadium.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
+            this.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
             this.previousX = x;
             this.previousY = y;
 
-            Stadium.updateTrackData();
+            this.updateTrackData();
         }
     }
 

@@ -112,8 +112,8 @@ export class NaturalSelection {
 
     private static naturalSelectionLogElement = document.getElementById('naturalSelectionLog') as HTMLDivElement;
     private static naturalSelectionEntryTemplate = document.getElementById('naturalSelectionEntryTemplate') as HTMLTemplateElement;
-    public static naturalSelectionLog: NaturalSelectionEntry[] = [];
-    public static updateLog() {
+    private static naturalSelectionLog: NaturalSelectionEntry[] = [];
+    private static updateLog() {
         console.log('Updating Natural Selection Log');
         const shouldAutoScroll = this.naturalSelectionLogElement.scrollHeight - this.naturalSelectionLogElement.scrollTop <= this.naturalSelectionLogElement.clientHeight + 10;
 
@@ -131,8 +131,8 @@ export class NaturalSelection {
     }
 
     public static updateTickCounter() {
-        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${NaturalSelection.options.tickLimit.value}`;
-        this.tickCounter.style.setProperty('--progress', `${MathExtra.clamp(Looper.tickCount / NaturalSelection.options.tickLimit.value, 0, 1) * 100}%`);
+        this.tickCounter.textContent = `Tick: ${Looper.tickCount}/${this.options.tickLimit.value}`;
+        this.tickCounter.style.setProperty('--progress', `${MathExtra.clamp(Looper.tickCount / this.options.tickLimit.value, 0, 1) * 100}%`);
     }
 
     /* ---------------------------------- Code ---------------------------------- */
@@ -141,8 +141,9 @@ export class NaturalSelection {
         document.addEventListener('DOMContentLoaded', () => {
             if (CookieHandler.cookie?.naturalSelectionOptions) {
                 const cookieOptions = CookieHandler.cookie.naturalSelectionOptions as SerialisedNaturalSelectionOptions;
+                const options = this.options;
                 Object.keys(this.options).forEach((key) => {
-                    const typedKey = key as keyof typeof NaturalSelection.options;
+                    const typedKey = key as keyof typeof options;
                     if (cookieOptions[typedKey] !== undefined) {
                         this.options[typedKey].value = cookieOptions[typedKey];
                         this.options[typedKey].element.value = cookieOptions[typedKey].toString();
@@ -152,14 +153,13 @@ export class NaturalSelection {
             }
 
             Object.keys(this.options).forEach((key) => {
-                const typedKey = key as keyof typeof NaturalSelection.options;
+                const self = this;
+                const options = this.options;
+                const typedKey = key as keyof typeof options;
                 const inputOption = this.options[typedKey];
                 if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
 
-                inputOption.element.addEventListener('change', onInputChange);
-                onInputChange();
-
-                function onInputChange() {
+                const handleOptionChange = () => {
                     if (!inputOption.element.validity.valid) { return; }
 
                     if (typeof inputOption.value === "number") {
@@ -168,20 +168,23 @@ export class NaturalSelection {
                     } else if (typeof inputOption.value === "boolean") {
                         inputOption.value = inputOption.element.checked;
                     }
-                    NaturalSelection.updateTickCounter();
+                    self.updateTickCounter();
 
                     if (CookieHandler.cookie === null) { CookieHandler.cookie = {}; }
                     const serialisedOptions: SerialisedNaturalSelectionOptions = {
-                        tickLimit: NaturalSelection.options.tickLimit.value,
-                        populationSize: NaturalSelection.options.populationSize.value,
-                        survivalHarshness: NaturalSelection.options.survivalHarshness.value,
-                        reproductionHarshness: NaturalSelection.options.reproductionHarshness.value,
-                        mutationRate: NaturalSelection.options.mutationRate.value,
-                        parentShouldMutate: NaturalSelection.options.parentShouldMutate.value,
+                        tickLimit: self.options.tickLimit.value,
+                        populationSize: self.options.populationSize.value,
+                        survivalHarshness: self.options.survivalHarshness.value,
+                        reproductionHarshness: self.options.reproductionHarshness.value,
+                        mutationRate: self.options.mutationRate.value,
+                        parentShouldMutate: self.options.parentShouldMutate.value,
                     };
                     CookieHandler.cookie.naturalSelectionOptions = serialisedOptions;
                     CookieHandler.updateCookie();
-                }
+                };
+
+                inputOption.element.addEventListener('change', handleOptionChange);
+                handleOptionChange();
             });
             this.updateTickCounter();
         });

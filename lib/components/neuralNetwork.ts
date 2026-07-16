@@ -94,7 +94,7 @@ export class NeuralNetwork {
     } as const;
 
     public static redraw() {
-        const { layerSizes, layerCount, nodeRadius } = NeuralNetwork.redrawNeuralNetwork();
+        const { layerSizes, layerCount, nodeRadius } = this.redrawNeuralNetwork();
         if (layerSizes.length !== layerCount) {
             throw new Error(`Layer sizes length (${layerSizes.length}) does not match layer count (${layerCount})`);
         }
@@ -218,8 +218,9 @@ export class NeuralNetwork {
 
             if (CookieHandler.cookie?.inputLayerOptions) {
                 const cookieInputLayerOptions = CookieHandler.cookie.inputLayerOptions as SerialisedInputLayerOptions;
+                const options = this.options;
                 Object.keys(this.options).forEach((key) => {
-                    const typedKey = key as keyof typeof NeuralNetwork.options;
+                    const typedKey = key as keyof typeof options;
                     if (cookieInputLayerOptions[typedKey] !== undefined) {
                         this.options[typedKey].value = cookieInputLayerOptions[typedKey];
                         this.options[typedKey].element.checked = cookieInputLayerOptions[typedKey];
@@ -228,23 +229,24 @@ export class NeuralNetwork {
             }
 
             Object.keys(this.options).forEach((key) => {
-                const typedKey = key as keyof typeof NeuralNetwork.options;
+                const options = this.options;
+                const typedKey = key as keyof typeof options;
                 const inputOption = this.options[typedKey];
                 if (!inputOption.element) { throw new Error(`Input element for ${typedKey} not found`); }
                 UI.lockableElements.push(inputOption.element);
 
-                inputOption.element.addEventListener('change', onInputChange);
-                onInputChange();
-
-                function onInputChange() {
+                const onInputChange = () => {
                     if (UI.inputsLocked) { return; }
                     inputOption.value = inputOption.element.checked;
-                    NeuralNetwork.redraw();
+                    this.redraw();
 
                     if (CookieHandler.cookie === null) { CookieHandler.cookie = {}; }
-                    CookieHandler.cookie.inputLayerOptions = NeuralNetwork.serialiseInputLayerOptions();
+                    CookieHandler.cookie.inputLayerOptions = this.serialiseInputLayerOptions();
                     CookieHandler.updateCookie();
-                }
+                };
+
+                inputOption.element.addEventListener('change', onInputChange);
+                onInputChange();
             });
 
             this.redraw();

@@ -50,7 +50,7 @@ export class UI {
             (document.body.clientWidth - PADDING) / mainContainer.clientWidth,
         );
 
-        UI.zoomFactor = nextZoomFactor;
+        this.zoomFactor = nextZoomFactor;
         mainContainer.style.zoom = nextZoomFactor.toString();
     }
 
