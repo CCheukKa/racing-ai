@@ -2,7 +2,6 @@ import { type SerialisedCarData, Cars } from "./cars";
 import { CookieHandler } from "./utils/cookieHandler";
 import { Leaderboard } from "./components/leaderboard";
 import { Stadium } from "./components/stadium";
-import { recacheCanvasPointCache } from "./utils/canvasUtils";
 
 export class UI {
     private static _inputsLocked = false;
@@ -29,7 +28,7 @@ export class UI {
             this.bindMiscellaneousUi();
         });
         window.addEventListener("resize", () => {
-            recacheCanvasPointCache(Stadium.trackCanvas);
+            Stadium.handleResize();
         });
     }
 
@@ -138,8 +137,8 @@ export class UI {
 
             Stadium.isRaceMode = isRaceMode;
             document.body.classList.toggle("raceMode", isRaceMode);
-            Stadium.STADIUM_WIDTH = isRaceMode ? 985 : 600;
-            Stadium.recalculateCanvasSizes();
+            Stadium.stadiumContainer.style.width = isRaceMode ? "100%" : `${Stadium.NORMAL_STADIUM_WIDTH}px`;
+            Stadium.handleResize();
             Stadium.drawCars();
             setTimeout(() => {
                 this.recalculateWhatTextSizes();

@@ -257,23 +257,30 @@ input:user-invalid {
             }
         }
 
-        canvas {
-            position: absolute;
-            cursor: none;
-            overscroll-behavior: none;
-            touch-action: none;
-        }
+        .stadiumCanvasContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            isolation: isolate;
 
-        #hintCanvas {
-            z-index: 10;
-        }
+            canvas {
+                position: absolute;
+                cursor: none;
+                overscroll-behavior: none;
+                touch-action: none;
+            }
 
-        #carCanvas {
-            z-index: 5;
-        }
+            #hintCanvas {
+                z-index: 10;
+            }
 
-        #trackCanvas {
-            z-index: 2;
+            #carCanvas {
+                z-index: 5;
+            }
+
+            #trackCanvas {
+                z-index: 2;
+            }
         }
     }
 

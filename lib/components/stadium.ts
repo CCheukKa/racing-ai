@@ -3,7 +3,7 @@ import { NeuralNetwork } from "./neuralNetwork";
 import { Car } from "../cars";
 import { Garage } from "./garage";
 import { MathExtra } from "../utils/mathExtra";
-import { drawCircle, drawLine, drawRectangle, getCanvasPoint } from "@lib/utils/canvasUtils";
+import { drawCircle, drawLine, drawRectangle, getCanvasPoint, recacheCanvasPointCache } from "@lib/utils/canvasUtils";
 import { PerformanceMonitor } from "@lib/utils/performanceMonitor";
 
 export class Stadium {
@@ -74,9 +74,7 @@ export class Stadium {
 
     /* ----------------------------------- UI ----------------------------------- */
 
-    private static stadiumContainer = null as unknown as HTMLDivElement;
-    public static STADIUM_WIDTH = 600;
-    public static STADIUM_HEIGHT = 400;
+    public static stadiumContainer = null as unknown as HTMLDivElement;
     public static trackCanvas = null as unknown as HTMLCanvasElement;
     private static trackCtx = null as unknown as CanvasRenderingContext2D;
     private static carCanvas = null as unknown as HTMLCanvasElement;
@@ -94,6 +92,17 @@ export class Stadium {
 
     private static trackData: Uint8ClampedArray<ArrayBufferLike> = new Uint8ClampedArray();
 
+    public static readonly NORMAL_STADIUM_WIDTH = 600;
+    public static readonly NORMAL_STADIUM_HEIGHT = 400;
+    public static STADIUM_WIDTH = 600;
+    public static STADIUM_HEIGHT = 400;
+
+    private static lastPointerMove: PointerEvent | null = null;
+    private static pendingResizeFrame: number | null = null;
+    private static isLeftMouseDown = false;
+    private static isRightMouseDown = false;
+    private static previousX: number | undefined;
+    private static previousY: number | undefined;
 
     private static redrawHintCanvas(x: number, y: number, isDelete?: boolean) {
         Stadium.hintCtx.clearRect(0, 0, Stadium.STADIUM_WIDTH, Stadium.STADIUM_HEIGHT);
@@ -210,22 +219,58 @@ export class Stadium {
     }
 
     public static recalculateCanvasSizes() {
-        this.TRACK_START_X = Stadium.STADIUM_WIDTH / 2;
-        this.TRACK_START_Y = Stadium.STADIUM_HEIGHT / 4;
-        this.stadiumContainer.style.width = `${this.STADIUM_WIDTH}px`;
-        this.stadiumContainer.style.height = `${this.STADIUM_HEIGHT}px`;
-        this.trackCanvas.width = this.STADIUM_WIDTH;
-        this.trackCanvas.height = this.STADIUM_HEIGHT;
-        this.carCanvas.width = this.STADIUM_WIDTH;
-        this.carCanvas.height = this.STADIUM_HEIGHT;
-        this.hintCanvas.width = this.STADIUM_WIDTH;
-        this.hintCanvas.height = this.STADIUM_HEIGHT;
+        const { width, height } = this.stadiumContainer.getBoundingClientRect();
+
+        const nextWidth = Math.max(1, Math.ceil(width));
+        const nextHeight = Math.max(1, Math.ceil(height));
+        const oldWidth = this.STADIUM_WIDTH || 0;
+        const oldHeight = this.STADIUM_HEIGHT || 0;
+
+        const stadiumEnlarged = oldWidth < nextWidth || oldHeight < nextHeight;
+        this.STADIUM_WIDTH = Math.max(oldWidth, nextWidth);
+        this.STADIUM_HEIGHT = Math.max(oldHeight, nextHeight);
+
+        this.TRACK_START_X = this.STADIUM_WIDTH / 2;
+        this.TRACK_START_Y = this.STADIUM_HEIGHT / 4;
+
+        if (stadiumEnlarged) {
+            const oldTrackData = oldWidth > 0 && oldHeight > 0
+                ? this.trackCtx.getImageData(0, 0, oldWidth, oldHeight).data
+                : null;
+
+            this.trackCanvas.width = this.STADIUM_WIDTH;
+            this.trackCanvas.height = this.STADIUM_HEIGHT;
+            this.carCanvas.width = this.STADIUM_WIDTH;
+            this.carCanvas.height = this.STADIUM_HEIGHT;
+            this.hintCanvas.width = this.STADIUM_WIDTH;
+            this.hintCanvas.height = this.STADIUM_HEIGHT;
+
+            if (oldTrackData) {
+                const dx = Math.floor((this.STADIUM_WIDTH - oldWidth) / 2);
+                const dy = Math.floor((this.STADIUM_HEIGHT - oldHeight) / 2);
+                this.trackCtx.putImageData(new ImageData(oldTrackData, oldWidth, oldHeight), dx, dy);
+            }
+
+            Stadium.updateTrackData();
+        }
 
         Stadium.hintX = NaN;
         Stadium.hintY = NaN;
         Stadium.isHintActive = false;
+    }
 
-        Stadium.updateTrackData();
+    public static handleResize() {
+        if (this.pendingResizeFrame !== null) {
+            cancelAnimationFrame(this.pendingResizeFrame);
+        }
+
+        this.pendingResizeFrame = requestAnimationFrame(() => {
+            this.pendingResizeFrame = null;
+            this.recalculateCanvasSizes();
+            recacheCanvasPointCache(this.trackCanvas);
+            if (!this.lastPointerMove) { return; }
+            this.handlePointerMove(this.lastPointerMove);
+        });
     }
 
     /* ---------------------------------- Code ---------------------------------- */
@@ -252,8 +297,6 @@ export class Stadium {
         this.hintCanvas = hintCanvas;
         this.hintCtx = hintCtx;
         this.clearStadiumButton = clearStadiumButton;
-        this.STADIUM_WIDTH = this.stadiumContainer.clientWidth;
-        this.STADIUM_HEIGHT = this.stadiumContainer.clientHeight;
 
         document.addEventListener('DOMContentLoaded', () => {
             this.recalculateCanvasSizes();
@@ -267,11 +310,6 @@ export class Stadium {
             Stadium.isHintActive = false;
         });
 
-        let isLeftMouseDown = false;
-        let isRightMouseDown = false;
-        let previousX: number | undefined;
-        let previousY: number | undefined;
-
         document.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });
@@ -282,13 +320,13 @@ export class Stadium {
 
             switch (event.button) {
                 case 0: // Left button
-                    handleLeftClick(x, y, event.target);
+                    this.handleLeftClick(x, y, event.target);
                     break;
                 case 1: // Middle button
                     Stadium.spawnCar(x, y);
                     break;
                 case 2: // Right button
-                    handleRightClick(x, y, event.target);
+                    this.handleRightClick(x, y, event.target);
                     break;
                 default:
                     return;
@@ -296,13 +334,12 @@ export class Stadium {
         });
 
         document.addEventListener('pointermove', (event: PointerEvent) => {
-            const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
-            const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
-            handleMouseMove(x, y, isOnCanvas);
+            this.lastPointerMove = event;
+            this.handlePointerMove(event);
         });
 
         document.addEventListener('pointerup', (event: PointerEvent) => {
-            handleMouseUp();
+            this.handleMouseUp();
             if (event.pointerType === 'mouse') {
                 const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
                 Stadium.hintX = x;
@@ -313,75 +350,81 @@ export class Stadium {
             }
         });
 
-        function handleLeftClick(x: number, y: number, target: EventTarget | null) {
-            if (shouldDiscardEvent(target)) { return; }
-
-            isLeftMouseDown = true;
-            isRightMouseDown = false;
-            const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
-            handleMouseMove(x, y, isOnCanvas);
-        }
-
-        function handleRightClick(x: number, y: number, target: EventTarget | null) {
-            if (shouldDiscardEvent(target)) { return; }
-
-            isLeftMouseDown = false;
-            isRightMouseDown = true;
-            const isOnCanvas = Stadium.stadiumContainer.contains(target as Node);
-            handleMouseMove(x, y, isOnCanvas);
-        }
-
-        function handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
-            // Stage changes for requestAnimationFrame thread instead of immediate execution
-            Stadium.hintX = x;
-            Stadium.hintY = y;
-            Stadium.altStyle = isRightMouseDown;
-            Stadium.isHintActive = isOnCanvas || isLeftMouseDown || isRightMouseDown;
-
-            if (isLeftMouseDown) {
-                drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
-                if (previousX !== undefined && previousY !== undefined) {
-                    drawLine(Stadium.trackCtx, previousX, previousY, x, y, Stadium.TRACK_WIDTH, Stadium.TRACK_COLOUR);
-                }
-                previousX = x;
-                previousY = y;
-
-                Stadium.updateTrackData();
-            }
-            if (isRightMouseDown) {
-                const ERASE_BUFFER_RADIUS = 4;
-
-                Stadium.trackCtx.globalCompositeOperation = 'destination-out';
-                drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
-                if (previousX !== undefined && previousY !== undefined) {
-                    drawLine(Stadium.trackCtx, previousX, previousY, x, y, Stadium.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
-                }
-                Stadium.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
-                previousX = x;
-                previousY = y;
-
-                Stadium.updateTrackData();
-            }
-        }
-
-        function handleMouseUp() {
-            isLeftMouseDown = false;
-            isRightMouseDown = false;
-            previousX = undefined;
-            previousY = undefined;
-        }
-
-        function shouldDiscardEvent(target: EventTarget | null): boolean {
-            return target instanceof HTMLInputElement
-                || target instanceof HTMLTextAreaElement
-                || target instanceof HTMLButtonElement
-                || target instanceof HTMLSelectElement;
-        }
-
         this.clearStadiumButton.addEventListener('click', () => {
             if (!confirm('Are you sure you want to clear the stadium? This will remove all track data.')) { return; }
             this.trackCtx.clearRect(0, 0, this.STADIUM_WIDTH, this.STADIUM_HEIGHT);
             Stadium.updateTrackData();
         });
+    }
+
+    private static handleLeftClick(x: number, y: number, target: EventTarget | null) {
+        if (this.shouldDiscardEvent(target)) { return; }
+
+        this.isLeftMouseDown = true;
+        this.isRightMouseDown = false;
+        const isOnCanvas = this.stadiumContainer.contains(target as Node);
+        this.handleMouseMove(x, y, isOnCanvas);
+    }
+
+    private static handleRightClick(x: number, y: number, target: EventTarget | null) {
+        if (this.shouldDiscardEvent(target)) { return; }
+
+        this.isLeftMouseDown = false;
+        this.isRightMouseDown = true;
+        const isOnCanvas = this.stadiumContainer.contains(target as Node);
+        this.handleMouseMove(x, y, isOnCanvas);
+    }
+
+    private static handlePointerMove(event: PointerEvent) {
+        const { x, y } = getCanvasPoint(this.trackCanvas, event.clientX, event.clientY);
+        const isOnCanvas = this.stadiumContainer.contains(event.target as Node);
+        this.handleMouseMove(x, y, isOnCanvas);
+    }
+
+    private static handleMouseMove(x: number, y: number, isOnCanvas: boolean) {
+        // Stage changes for requestAnimationFrame thread instead of immediate execution
+        Stadium.hintX = x;
+        Stadium.hintY = y;
+        Stadium.altStyle = this.isRightMouseDown;
+        Stadium.isHintActive = isOnCanvas || this.isLeftMouseDown || this.isRightMouseDown;
+
+        if (this.isLeftMouseDown) {
+            drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2, Stadium.TRACK_COLOUR);
+            if (this.previousX !== undefined && this.previousY !== undefined) {
+                drawLine(Stadium.trackCtx, this.previousX, this.previousY, x, y, Stadium.TRACK_WIDTH, Stadium.TRACK_COLOUR);
+            }
+            this.previousX = x;
+            this.previousY = y;
+
+            Stadium.updateTrackData();
+        }
+        if (this.isRightMouseDown) {
+            const ERASE_BUFFER_RADIUS = 4;
+
+            Stadium.trackCtx.globalCompositeOperation = 'destination-out';
+            drawCircle(Stadium.trackCtx, x, y, Stadium.TRACK_WIDTH / 2 + ERASE_BUFFER_RADIUS, '#ffffff');
+            if (this.previousX !== undefined && this.previousY !== undefined) {
+                drawLine(Stadium.trackCtx, this.previousX, this.previousY, x, y, Stadium.TRACK_WIDTH + ERASE_BUFFER_RADIUS * 2, '#ffffff');
+            }
+            Stadium.trackCtx.globalCompositeOperation = 'source-over'; // Reset to default
+            this.previousX = x;
+            this.previousY = y;
+
+            Stadium.updateTrackData();
+        }
+    }
+
+    private static handleMouseUp() {
+        this.isLeftMouseDown = false;
+        this.isRightMouseDown = false;
+        this.previousX = undefined;
+        this.previousY = undefined;
+    }
+
+    private static shouldDiscardEvent(target: EventTarget | null): boolean {
+        return target instanceof HTMLInputElement
+            || target instanceof HTMLTextAreaElement
+            || target instanceof HTMLButtonElement
+            || target instanceof HTMLSelectElement;
     }
 }
