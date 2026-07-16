@@ -297,6 +297,8 @@ input:user-invalid {
             align-items: center;
             justify-content: center;
             position: relative;
+            background-color: var(--grass-colour);
+            overflow: hidden;
 
             #frontText,
             #backText {
@@ -324,10 +326,6 @@ input:user-invalid {
             #backText {
                 bottom: var(--padding);
             }
-        }
-
-        #garageCanvas {
-            background-color: var(--grass-colour);
         }
 
         .probeAngleContainer {
