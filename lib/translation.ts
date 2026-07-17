@@ -193,7 +193,7 @@ export function getTranslationValue(bundle: TranslationBundle, key: TranslationK
         case TranslationKey.TargetTps: return bundle.staticText[".tickSpeedControls > div:nth-child(3) span:nth-child(1)"]!;
         case TranslationKey.DragPrompt: return bundle.staticText["#dragPrompt"]!;
         case TranslationKey.TipsLabel: return bundle.tipsLabel;
-        case TranslationKey.TickCounterPrefix: return bundle === undefined ? "Tick" : (bundle.languageButtonLabel === "EN/中" ? "Tick" : "刻");
+        case TranslationKey.TickCounterPrefix: return bundle === undefined ? "Tick" : (bundle.languageButtonLabel === "EN/中" ? "Tick" : "Tick");
         case TranslationKey.LeaderboardName: return bundle.runtimeText ? bundle.runtimeText.leaderboardName : "Name";
         case TranslationKey.LeaderboardHash: return bundle.runtimeText ? bundle.runtimeText.leaderboardHash : "Hash";
         case TranslationKey.LeaderboardScore: return bundle.runtimeText ? bundle.runtimeText.leaderboardScore : "Score";
