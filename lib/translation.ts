@@ -238,6 +238,98 @@ export function getTranslationValue(bundle: TranslationBundle, key: TranslationK
     }
 }
 
+export function getTranslationTitleValue(bundle: TranslationBundle, key: TranslationKey): string {
+    switch (key) {
+        case TranslationKey.LanguageButtonTitle: return bundle.languageButtonTitle;
+        case TranslationKey.ClearStadiumButton: return bundle.staticTitle["#clearStadiumButton"]!;
+        case TranslationKey.RacingStadium: return bundle.staticTitle["#stadiumContainer .whatText"]!;
+        case TranslationKey.Garage: return bundle.staticTitle[".garageContainer .whatText"]!;
+        case TranslationKey.NeuralNetwork: return bundle.staticTitle[".neuralNetworkContainer .whatText"]!;
+        case TranslationKey.NaturalSelection: return bundle.staticTitle[".naturalSelectionContainer .whatText"]!;
+        case TranslationKey.LeaderboardHeading: return bundle.staticTitle[".leaderboardContainer .whatText"]!;
+        case TranslationKey.TutorialText: return bundle.staticTitle["#stadiumContainer .tutorialText"]!;
+        case TranslationKey.ScoringText: return bundle.staticTitle[".scoring"]!;
+        case TranslationKey.FrontText: return bundle.staticTitle["#frontText"]!;
+        case TranslationKey.BackText: return bundle.staticTitle["#backText"]!;
+        case TranslationKey.ProbeLabel: return bundle.staticTitle["label[for='probeAngles']"]!;
+        case TranslationKey.InputLayerTitle: return bundle.staticTitle[".neuralNetworkContainer .title"]!;
+        case TranslationKey.ProbeDist: return bundle.staticTitle["label[for='probeDistances']"]!;
+        case TranslationKey.CarSpeed: return bundle.staticTitle["label[for='carSpeed']"]!;
+        case TranslationKey.CarAngle: return bundle.staticTitle["label[for='carAngle']"]!;
+        case TranslationKey.CarPosition: return bundle.staticTitle["label[for='carPosition']"]!;
+        case TranslationKey.TrackAngle: return bundle.staticTitle["label[for='trackAngle']"]!;
+        case TranslationKey.LapCount: return bundle.staticTitle["label[for='lapCount']"]!;
+        case TranslationKey.OnTrackQuestion: return bundle.staticTitle["label[for='onTrack']"]!;
+        case TranslationKey.RoadScore: return bundle.staticTitle["label[for='roadScore']"]!;
+        case TranslationKey.PerfScore: return bundle.staticTitle["label[for='performanceScore']"]!;
+        case TranslationKey.CurrentTick: return bundle.staticTitle["label[for='tickNumber']"]!;
+        case TranslationKey.Input: return bundle.staticTitle[".inputLayerContainer .layerLabel"]!;
+        case TranslationKey.Hidden: return bundle.staticTitle[".hiddenLayersContainer .layerLabel"]!;
+        case TranslationKey.Output: return bundle.staticTitle[".outputLayerContainer .layerLabel"]!;
+        case TranslationKey.TicksPerGeneration: return bundle.staticTitle["label[for='tickLimit']"]!;
+        case TranslationKey.TargetPopulationSize: return bundle.staticTitle["label[for='populationSize']"]!;
+        case TranslationKey.SurvivalHarshness: return bundle.staticTitle["label[for='survivalHarshness']"]!;
+        case TranslationKey.ReproductionHarshness: return bundle.staticTitle["label[for='reproductionHarshness']"]!;
+        case TranslationKey.NeuralNetworkMutationRate: return bundle.staticTitle["label[for='mutationRate']"]!;
+        case TranslationKey.ParentShouldMutate: return bundle.staticTitle["label[for='parentShouldMutate']"]!;
+        case TranslationKey.Gen: return bundle.staticTitle[".naturalSelectionContainer .statusBoard .header div:nth-child(1)"]!;
+        case TranslationKey.Population: return bundle.staticTitle[".naturalSelectionContainer .statusBoard .header div:nth-child(2)"]!;
+        case TranslationKey.Survival: return bundle.staticTitle[".naturalSelectionContainer .statusBoard .header div:nth-child(3)"]!;
+        case TranslationKey.BestScore: return bundle.staticTitle[".naturalSelectionContainer .statusBoard .header div:nth-child(4)"]!;
+        case TranslationKey.Start: return bundle.staticTitle["#tickLoopButton"]!;
+        case TranslationKey.StopAfterThis: return bundle.staticTitle["#generationLoopButton"]!;
+        case TranslationKey.Rank: return bundle.staticTitle[".leaderboardContainer .leaderboardTableContainer .header div:nth-child(1)"]!;
+        case TranslationKey.ID: return bundle.staticTitle[".leaderboardContainer .leaderboardTableContainer .header div:nth-child(2)"]!;
+        case TranslationKey.Score: return bundle.staticTitle[".leaderboardContainer .leaderboardTableContainer .header div:nth-child(4)"]!;
+        case TranslationKey.Lap: return bundle.staticTitle[".leaderboardContainer .leaderboardTableContainer .header div:nth-child(5)"]!;
+        case TranslationKey.Speed: return bundle.staticTitle[".leaderboardContainer .leaderboardTableContainer .header div:nth-child(6)"]!;
+        case TranslationKey.OnTrack: return bundle.staticTitle[".leaderboardContainer .leaderboardTableContainer .header div:nth-child(7)"]!;
+        case TranslationKey.ExportSelectedCar: return bundle.staticTitle["#exportSelectedCarButton"]!;
+        case TranslationKey.ResetLeaderboard: return bundle.staticTitle["#resetLeaderboardButton"]!;
+        case TranslationKey.ImportCar: return bundle.staticTitle["#importCar"]!;
+        case TranslationKey.ResetSettings: return bundle.staticTitle["#resetSettingsButton"]!;
+        case TranslationKey.RaceModeQuestion: return bundle.staticTitle["label[for='raceModeButton']"]!;
+        case TranslationKey.MaxTpsEst: return bundle.staticTitle[".tickSpeedControls > div:nth-child(1) span:nth-child(1)"]!;
+        case TranslationKey.CurrentTps: return bundle.staticTitle[".tickSpeedControls > div:nth-child(2) span:nth-child(1)"]!;
+        case TranslationKey.TargetTps: return bundle.staticTitle[".tickSpeedControls > div:nth-child(3) span:nth-child(1)"]!;
+        case TranslationKey.DragPrompt: return bundle.staticTitle["#dragPrompt"]!;
+        case TranslationKey.TipsLabel: return bundle.tipsLabel;
+        case TranslationKey.TickCounterPrefix: return bundle.languageButtonLabel === "EN/中" ? "Tick" : "Tick";
+        case TranslationKey.LeaderboardName: return bundle.runtimeText.leaderboardName;
+        case TranslationKey.LeaderboardHash: return bundle.runtimeText.leaderboardHash;
+        case TranslationKey.LeaderboardScore: return bundle.runtimeText.leaderboardScore;
+        case TranslationKey.LeaderboardLap: return bundle.runtimeText.leaderboardLap;
+        case TranslationKey.LeaderboardAvgSpeed: return bundle.runtimeText.leaderboardAvgSpeed;
+        case TranslationKey.LeaderboardOnTrack: return bundle.runtimeText.leaderboardOnTrack;
+        case TranslationKey.LeaderboardGeneration: return bundle.runtimeText.leaderboardGeneration;
+        case TranslationKey.LeaderboardInputs: return bundle.runtimeText.leaderboardInputs;
+        case TranslationKey.LeaderboardLayers: return bundle.runtimeText.leaderboardLayers;
+        case TranslationKey.LeaderboardAngles: return bundle.runtimeText.leaderboardAngles;
+        case TranslationKey.TipVersatilityImportant: return bundle.tips[0]!;
+        case TranslationKey.TipStayOnTrack: return bundle.tips[1]!;
+        case TranslationKey.TipHighTps: return bundle.tips[2]!;
+        case TranslationKey.TipChooseInputsThoughtfully: return bundle.tips[3]!;
+        case TranslationKey.TipTweakControlsBetweenGenerations: return bundle.tips[4]!;
+        case TranslationKey.TipChangeStadiumBetweenGenerations: return bundle.tips[5]!;
+        case TranslationKey.TipChangeGarageProbeAngles: return bundle.tips[6]!;
+        case TranslationKey.TipDrawOwnTracks: return bundle.tips[7]!;
+        case TranslationKey.TipExportGoodCars: return bundle.tips[8]!;
+        case TranslationKey.TipThinkAboutControls: return bundle.tips[9]!;
+        case TranslationKey.TipMoreLayersDoesNotGuaranteeBetter: return bundle.tips[10]!;
+        case TranslationKey.TipUseLeaderboard: return bundle.tips[11]!;
+        case TranslationKey.TipUseCarPeeker: return bundle.tips[12]!;
+        case TranslationKey.TipUseImportExport: return bundle.tips[13]!;
+        case TranslationKey.TipSettingsSaved: return bundle.tips[14]!;
+        case TranslationKey.TipEnableRaceMode: return bundle.tips[15]!;
+        case TranslationKey.TipResetSettings: return bundle.tips[16]!;
+        case TranslationKey.TipResetLeaderboard: return bundle.tips[17]!;
+        case TranslationKey.TipClearStadium: return bundle.tips[18]!;
+        case TranslationKey.TipDragDropCars: return bundle.tips[19]!;
+        default:
+            throw new Error(`Translation key ${key} is not a title value.`);
+    }
+}
+
 export const SUPPORTED_LANGUAGES: { code: SupportedLanguage; label: string; buttonLabel: string; }[] = [
     { code: "en-GB", label: "English (UK)", buttonLabel: "EN/中" },
     { code: "zh-HK", label: "Chinese (Traditional)", buttonLabel: "EN/中" },

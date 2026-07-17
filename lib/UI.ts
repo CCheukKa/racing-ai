@@ -2,7 +2,7 @@ import { type SerialisedCarData, Cars } from "./cars";
 import { CookieHandler } from "./utils/cookieHandler";
 import { Leaderboard } from "./components/leaderboard";
 import { Stadium } from "./components/stadium";
-import { TranslationKey, SUPPORTED_LANGUAGES, TRANSLATIONS, getTranslationValue, type SupportedLanguage } from "./translation";
+import { TranslationKey, SUPPORTED_LANGUAGES, TRANSLATIONS, getTranslationTitleValue, getTranslationValue, type SupportedLanguage } from "./translation";
 
 export class UI {
     private static _inputsLocked = false;
@@ -26,6 +26,14 @@ export class UI {
             throw new Error(`Translation key ${key} is not a string value.`);
         }
         return value;
+    }
+
+    public static tt(key: TranslationKey): string {
+        if (key === TranslationKey.TickCounterPrefix) {
+            return this.currentLanguage === "zh-HK" ? "刻" : "Tick";
+        }
+
+        return getTranslationTitleValue(TRANSLATIONS[this.currentLanguage], key);
     }
 
     public static tf(key: TranslationKey, ...args: any[]): string {
@@ -261,21 +269,27 @@ export class UI {
         });
 
         document.querySelectorAll<HTMLElement>("[data-translation]").forEach((element) => {
-            const key = element.dataset.translation as TranslationKey | undefined;
+            const key = element.dataset["translation"] as TranslationKey | undefined;
             if (!key) { return; }
             element.textContent = this.t(key);
         });
 
         document.querySelectorAll<HTMLElement>("[data-translation-html]").forEach((element) => {
-            const key = element.dataset.translationHtml as TranslationKey | undefined;
+            const key = element.dataset["translationHtml"] as TranslationKey | undefined;
             if (!key) { return; }
             element.innerHTML = this.t(key);
         });
 
         document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-translation-placeholder]").forEach((element) => {
-            const key = element.dataset.translationPlaceholder as TranslationKey | undefined;
+            const key = element.dataset["translationPlaceholder"] as TranslationKey | undefined;
             if (!key) { return; }
             element.placeholder = this.t(key);
+        });
+
+        document.querySelectorAll<HTMLElement>("[data-translation-title]").forEach((element) => {
+            const key = element.dataset["translationTitle"] as TranslationKey | undefined;
+            if (!key) { return; }
+            element.title = this.tt(key);
         });
 
         this.languageButton = document.getElementById("languageButton") as HTMLButtonElement | null;
