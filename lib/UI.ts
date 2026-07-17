@@ -18,7 +18,7 @@ export class UI {
 
     public static t(key: TranslationKey): string {
         if (key === TranslationKey.TickCounterPrefix) {
-            return this.currentLanguage === "zh-HK" ? "刻" : "Tick";
+            return this.currentLanguage === "zh-HK" ? "Tick" : "Tick";
         }
 
         const value = getTranslationValue(TRANSLATIONS[this.currentLanguage], key);
@@ -26,14 +26,6 @@ export class UI {
             throw new Error(`Translation key ${key} is not a string value.`);
         }
         return value;
-    }
-
-    public static tt(key: TranslationKey): string {
-        if (key === TranslationKey.TickCounterPrefix) {
-            return this.currentLanguage === "zh-HK" ? "刻" : "Tick";
-        }
-
-        return getTranslationTitleValue(TRANSLATIONS[this.currentLanguage], key);
     }
 
     public static tf(key: TranslationKey, ...args: any[]): string {
@@ -272,6 +264,15 @@ export class UI {
             const key = element.dataset["translation"] as TranslationKey | undefined;
             if (!key) { return; }
             element.textContent = this.t(key);
+
+            if (element.id === "languageButton") {
+                element.title = this.t(TranslationKey.LanguageButtonTitle);
+                return;
+            }
+
+            if (element.hasAttribute("title")) {
+                element.title = getTranslationTitleValue(bundle, key);
+            }
         });
 
         document.querySelectorAll<HTMLElement>("[data-translation-html]").forEach((element) => {
@@ -284,12 +285,6 @@ export class UI {
             const key = element.dataset["translationPlaceholder"] as TranslationKey | undefined;
             if (!key) { return; }
             element.placeholder = this.t(key);
-        });
-
-        document.querySelectorAll<HTMLElement>("[data-translation-title]").forEach((element) => {
-            const key = element.dataset["translationTitle"] as TranslationKey | undefined;
-            if (!key) { return; }
-            element.title = this.tt(key);
         });
 
         this.languageButton = document.getElementById("languageButton") as HTMLButtonElement | null;
