@@ -38,6 +38,11 @@ jobs:
               shell: bash
             - name: Build with Bun
               run: bun run build
+            - name: Pack thumbnail.png
+              run: |
+                  if [ -f "thumbnail.png" ]; then
+                      cp thumbnail.png dist/thumbnail.png
+                  fi
             - name: Add build watermark
               run: |
                   sed -i "s/#!build/${GITHUB_SHA:0:7}/g" dist/index.html
